@@ -1,6 +1,7 @@
 import { User } from './types';
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = `${API_BASE}/api`;
 
 function getToken(): string | null {
     return localStorage.getItem('token');
@@ -21,7 +22,7 @@ async function handleResponse(res: Response) {
 
 // ── Auth ─────────────────────────────────────────────
 export const apiSendOtp = async (email: string, name: string) => {
-    const res = await fetch(`${API_BASE}/auth/send-otp`, {
+    const res = await fetch(`${API_URL}/auth/send-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, name }),
@@ -30,7 +31,7 @@ export const apiSendOtp = async (email: string, name: string) => {
 };
 
 export const apiSignup = async (name: string, email: string, password: string, otp: string) => {
-    const res = await fetch(`${API_BASE}/auth/signup`, {
+    const res = await fetch(`${API_URL}/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password, otp }),
@@ -39,7 +40,7 @@ export const apiSignup = async (name: string, email: string, password: string, o
 };
 
 export const apiLogin = async (email: string, password: string) => {
-    const res = await fetch(`${API_BASE}/auth/login`, {
+    const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -48,12 +49,12 @@ export const apiLogin = async (email: string, password: string) => {
 };
 
 export const apiGetMe = async () => {
-    const res = await fetch(`${API_BASE}/auth/me`, { headers: authHeaders() });
+    const res = await fetch(`${API_URL}/auth/me`, { headers: authHeaders() });
     return handleResponse(res);
 };
 
 export const apiGoogleLogin = async (credential: string) => {
-    const res = await fetch(`${API_BASE}/auth/google`, {
+    const res = await fetch(`${API_URL}/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential }),
@@ -66,14 +67,14 @@ export const apiGetEvents = async (cursor?: string, limit?: number) => {
     const params = new URLSearchParams();
     if (cursor) params.set('cursor', cursor);
     if (limit) params.set('limit', String(limit));
-    const res = await fetch(`${API_BASE}/events?${params}`, { headers: authHeaders() });
+    const res = await fetch(`${API_URL}/events?${params}`, { headers: authHeaders() });
     return handleResponse(res);
 };
 
 export const apiUploadImage = async (file: File) => {
     const formData = new FormData();
     formData.append('image', file);
-    const res = await fetch(`${API_BASE}/upload`, {
+    const res = await fetch(`${API_URL}/upload`, {
         method: 'POST',
         headers: {
             // Do not set Content-Type header manually when using FormData, 
@@ -86,7 +87,7 @@ export const apiUploadImage = async (file: File) => {
 };
 
 export const apiGenerateDescription = async (title: string, category: string) => {
-    const res = await fetch(`${API_BASE}/ai/generate`, {
+    const res = await fetch(`${API_URL}/ai/generate`, {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({ title, category }),
@@ -95,7 +96,7 @@ export const apiGenerateDescription = async (title: string, category: string) =>
 };
 
 export const apiCreateEvent = async (eventData: Record<string, unknown>) => {
-    const res = await fetch(`${API_BASE}/events`, {
+    const res = await fetch(`${API_URL}/events`, {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify(eventData),
@@ -104,7 +105,7 @@ export const apiCreateEvent = async (eventData: Record<string, unknown>) => {
 };
 
 export const apiUpdateEvent = async (id: number, eventData: Record<string, unknown>) => {
-    const res = await fetch(`${API_BASE}/events/${id}`, {
+    const res = await fetch(`${API_URL}/events/${id}`, {
         method: 'PUT',
         headers: authHeaders(),
         body: JSON.stringify(eventData),
@@ -113,7 +114,7 @@ export const apiUpdateEvent = async (id: number, eventData: Record<string, unkno
 };
 
 export const apiDeleteEvent = async (id: number) => {
-    const res = await fetch(`${API_BASE}/events/${id}`, {
+    const res = await fetch(`${API_URL}/events/${id}`, {
         method: 'DELETE',
         headers: authHeaders(),
     });
@@ -122,22 +123,22 @@ export const apiDeleteEvent = async (id: number) => {
 
 // ── Registrations ────────────────────────────────────
 export const apiGetRegistrations = async () => {
-    const res = await fetch(`${API_BASE}/registrations`, { headers: authHeaders() });
+    const res = await fetch(`${API_URL}/registrations`, { headers: authHeaders() });
     return handleResponse(res);
 };
 
 export const apiGetAllRegistrations = async () => {
-    const res = await fetch(`${API_BASE}/registrations/all`, { headers: authHeaders() });
+    const res = await fetch(`${API_URL}/registrations/all`, { headers: authHeaders() });
     return handleResponse(res);
 };
 
 export const apiGetAllUsers = async () => {
-    const res = await fetch(`${API_BASE}/registrations/users`, { headers: authHeaders() });
+    const res = await fetch(`${API_URL}/registrations/users`, { headers: authHeaders() });
     return handleResponse(res);
 };
 
 export const apiJoinEvent = async (eventId: number) => {
-    const res = await fetch(`${API_BASE}/registrations`, {
+    const res = await fetch(`${API_URL}/registrations`, {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({ eventId }),
@@ -146,7 +147,7 @@ export const apiJoinEvent = async (eventId: number) => {
 };
 
 export const apiLeaveEvent = async (eventId: number) => {
-    const res = await fetch(`${API_BASE}/registrations/${eventId}`, {
+    const res = await fetch(`${API_URL}/registrations/${eventId}`, {
         method: 'DELETE',
         headers: authHeaders(),
     });
@@ -158,18 +159,18 @@ export const apiDiscovery = async (cursor?: string, limit?: number) => {
     const params = new URLSearchParams();
     if (cursor) params.set('cursor', cursor);
     if (limit) params.set('limit', String(limit));
-    const res = await fetch(`${API_BASE}/discovery?${params}`, { headers: authHeaders() });
+    const res = await fetch(`${API_URL}/discovery?${params}`, { headers: authHeaders() });
     return handleResponse(res);
 };
 
 // ── Admin ────────────────────────────────────────────
 export const apiAdminGetEvents = async () => {
-    const res = await fetch(`${API_BASE}/admin/events`, { headers: authHeaders() });
+    const res = await fetch(`${API_URL}/admin/events`, { headers: authHeaders() });
     return handleResponse(res);
 };
 
 export const apiAdminUpdateEvent = async (id: number, eventData: Record<string, unknown>) => {
-    const res = await fetch(`${API_BASE}/admin/events/${id}`, {
+    const res = await fetch(`${API_URL}/admin/events/${id}`, {
         method: 'PATCH',
         headers: authHeaders(),
         body: JSON.stringify(eventData),
@@ -178,7 +179,7 @@ export const apiAdminUpdateEvent = async (id: number, eventData: Record<string, 
 };
 
 export const apiAdminDeleteEvent = async (id: number) => {
-    const res = await fetch(`${API_BASE}/admin/events/${id}`, {
+    const res = await fetch(`${API_URL}/admin/events/${id}`, {
         method: 'DELETE',
         headers: authHeaders(),
     });
@@ -186,14 +187,14 @@ export const apiAdminDeleteEvent = async (id: number) => {
 };
 
 export const apiAdminGetRegistrations = async (eventId: number) => {
-    const res = await fetch(`${API_BASE}/admin/events/${eventId}/registrations`, {
+    const res = await fetch(`${API_URL}/admin/events/${eventId}/registrations`, {
         headers: authHeaders(),
     });
     return handleResponse(res);
 };
 
 export const apiAdminRemoveRegistration = async (regId: number) => {
-    const res = await fetch(`${API_BASE}/admin/registrations/${regId}`, {
+    const res = await fetch(`${API_URL}/admin/registrations/${regId}`, {
         method: 'DELETE',
         headers: authHeaders(),
     });
@@ -201,6 +202,6 @@ export const apiAdminRemoveRegistration = async (regId: number) => {
 };
 
 export const apiAdminGetUsers = async () => {
-    const res = await fetch(`${API_BASE}/admin/users`, { headers: authHeaders() });
+    const res = await fetch(`${API_URL}/admin/users`, { headers: authHeaders() });
     return handleResponse(res);
 };
