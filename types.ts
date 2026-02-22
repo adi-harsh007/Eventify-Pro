@@ -27,7 +27,7 @@ export interface EventItem {
   category: 'Hackathon' | 'Tech Competition' | 'Sports Event' | 'Cultural Fest' | 'Music Concert' | 'Workshop' | 'Conference' | 'Meetup' | 'Webinar' | 'Social' | 'Other';
   department: 'CSE' | 'ECE' | 'Mechanical' | 'Arts' | 'Sports' | 'Management' | 'Science' | 'General';
   image_url?: string;
-  created_by: number;
+  organizer_id: number;
   created_at?: string;
   updated_at?: string;
   // Admin join fields

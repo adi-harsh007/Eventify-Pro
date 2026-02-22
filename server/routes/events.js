@@ -72,7 +72,7 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
 
         const pool = getDB();
         const [result] = await pool.query(
-            `INSERT INTO events (title, description, date, time, location, capacity, category, department, image_url, created_by)
+            `INSERT INTO events (title, description, date, time, location, capacity, category, department, image_url, organizer_id)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [title, description, date, time, location, capacity, category || 'Other', department || 'General', imageUrl || '', req.user.id]
         );
@@ -99,7 +99,7 @@ router.put('/:id', authenticate, async (req, res) => {
         }
 
         const event = rows[0];
-        if (event.created_by !== req.user.id && !req.user.isAdmin) {
+        if (event.organizer_id !== req.user.id && !req.user.isAdmin) {
             return res.status(403).json({ message: 'You can only edit your own events.' });
         }
 
@@ -136,7 +136,7 @@ router.delete('/:id', authenticate, async (req, res) => {
         }
 
         const event = rows[0];
-        if (event.created_by !== req.user.id && !req.user.isAdmin) {
+        if (event.organizer_id !== req.user.id && !req.user.isAdmin) {
             return res.status(403).json({ message: 'You can only delete your own events.' });
         }
 
