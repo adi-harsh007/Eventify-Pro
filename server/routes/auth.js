@@ -326,4 +326,106 @@ router.post('/google', async (req, res) => {
     }
 });
 
+// POST /api/auth/forgot-password — send OTP for password reset
+router.post('/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email || !isValidEmail(email)) {
+            return res.status(400).json({ message: 'Please enter a valid email address.' });
+        }
+
+        const pool = getDB();
+        const [rows] = await pool.query('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
+
+        // Always return success to prevent account enumeration
+        if (rows.length === 0) {
+            return res.json({ message: 'If an account exists with this email, a reset code has been sent.' });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
+
+        await pool.query(
+            `INSERT INTO otp_codes (email, code, expires_at, attempts)
+             VALUES (?, ?, ?, 0)
+             ON DUPLICATE KEY UPDATE code = VALUES(code), expires_at = VALUES(expires_at), attempts = 0`,
+            [`reset:${email.toLowerCase()}`, otp, expiresAt]
+        );
+
+        const emailHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2>Password Reset — Eventify Pro</h2>
+                <p>Use the following code to reset your password. It is valid for 5 minutes.</p>
+                <div style="background: #f4f4f4; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; border-radius: 5px;">
+                    ${otp}
+                </div>
+                <p style="color: #888; margin-top: 16px;">If you didn't request this, you can safely ignore this email.</p>
+            </div>
+        `;
+
+        await sendEmail(email.toLowerCase(), 'Eventify Pro - Password Reset Code', emailHtml);
+
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`\n========================================`);
+            console.log(`\u{1F511} PASSWORD RESET OTP:`);
+            console.log(`To: ${email}`);
+            console.log(`Code: ${otp}`);
+            console.log(`========================================\n`);
+        }
+
+        res.json({ message: 'If an account exists with this email, a reset code has been sent.' });
+    } catch (error) {
+        logger.error('Forgot password error:', error);
+        res.status(500).json({ message: 'Server error.' });
+    }
+});
+
+// POST /api/auth/reset-password — verify OTP and set new password
+router.post('/reset-password', async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+        if (!email || !otp || !newPassword) {
+            return res.status(400).json({ message: 'Email, OTP, and new password are required.' });
+        }
+        if (newPassword.length < 6) {
+            return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+        }
+
+        const pool = getDB();
+        const resetKey = `reset:${email.toLowerCase()}`;
+
+        const [otpRows] = await pool.query('SELECT code, expires_at, attempts FROM otp_codes WHERE email = ?', [resetKey]);
+        if (otpRows.length === 0) {
+            return res.status(401).json({ message: 'No reset code found. Please request a new one.' });
+        }
+
+        const stored = otpRows[0];
+        if (stored.attempts >= 5) {
+            await pool.query('DELETE FROM otp_codes WHERE email = ?', [resetKey]);
+            return res.status(429).json({ message: 'Too many failed attempts. Please request a new code.' });
+        }
+        if (new Date(stored.expires_at) < new Date()) {
+            await pool.query('DELETE FROM otp_codes WHERE email = ?', [resetKey]);
+            return res.status(401).json({ message: 'Reset code has expired. Please request a new one.' });
+        }
+        if (String(stored.code).trim() !== String(otp).trim()) {
+            await pool.query('UPDATE otp_codes SET attempts = attempts + 1 WHERE email = ?', [resetKey]);
+            return res.status(401).json({ message: 'Invalid reset code.' });
+        }
+
+        // Update password
+        const salt = await bcrypt.genSalt(12);
+        const hash = await bcrypt.hash(newPassword, salt);
+        await pool.query('UPDATE users SET password = ? WHERE email = ?', [hash, email.toLowerCase()]);
+
+        // Cleanup OTP
+        await pool.query('DELETE FROM otp_codes WHERE email = ?', [resetKey]);
+
+        res.json({ message: 'Password reset successful. You can now log in.' });
+    } catch (error) {
+        logger.error('Reset password error:', error);
+        res.status(500).json({ message: 'Server error.' });
+    }
+});
+
 module.exports = router;

@@ -62,6 +62,24 @@ export const apiGoogleLogin = async (credential: string) => {
     return handleResponse(res);
 };
 
+export const apiForgotPassword = async (email: string) => {
+    const res = await fetch(`${API_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+    });
+    return handleResponse(res);
+};
+
+export const apiResetPassword = async (email: string, otp: string, newPassword: string) => {
+    const res = await fetch(`${API_URL}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp, newPassword }),
+    });
+    return handleResponse(res);
+};
+
 // ── Events ───────────────────────────────────────────
 export const apiGetEvents = async (cursor?: string, limit?: number) => {
     const params = new URLSearchParams();
