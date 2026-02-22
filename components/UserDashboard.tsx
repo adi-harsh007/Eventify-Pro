@@ -15,20 +15,31 @@ interface UserDashboardProps {
   onCreateEvent?: () => void;
 }
 
+import {
+  IoHomeOutline,
+  IoHardwareChipOutline,
+  IoSettingsOutline,
+  IoColorPaletteOutline,
+  IoFootballOutline,
+  IoBriefcaseOutline,
+  IoFlaskOutline,
+  IoPlanetOutline,
+} from 'react-icons/io5';
+
 // ── Department config ────────────────────────────────────
 type Department = 'CSE' | 'ECE' | 'Mechanical' | 'Arts' | 'Sports' | 'Management' | 'Science' | 'General';
 
 const DEPARTMENTS: Department[] = ['CSE', 'ECE', 'Mechanical', 'Arts', 'Sports', 'Management', 'Science', 'General'];
 
-const DEPT_META: Record<Department, { label: string; icon: string; color: string; glow: string }> = {
-  CSE: { label: 'Computer Science & Engineering', icon: '💻', color: '#3B82F6', glow: 'rgba(59,130,246,0.2)' },
-  ECE: { label: 'Electronics & Communication', icon: '⚡', color: '#F59E0B', glow: 'rgba(245,158,11,0.2)' },
-  Mechanical: { label: 'Mechanical Engineering', icon: '⚙️', color: '#6B7280', glow: 'rgba(107,114,128,0.2)' },
-  Arts: { label: 'Arts & Culture', icon: '🎨', color: '#EC4899', glow: 'rgba(236,72,153,0.2)' },
-  Sports: { label: 'Sports & Athletics', icon: '🏆', color: '#10B981', glow: 'rgba(16,185,129,0.2)' },
-  Management: { label: 'Business & Management', icon: '📊', color: '#8B5CF6', glow: 'rgba(139,92,246,0.2)' },
-  Science: { label: 'Science & Research', icon: '🔬', color: '#06B6D4', glow: 'rgba(6,182,212,0.2)' },
-  General: { label: 'General / Other', icon: '📌', color: '#94A3B8', glow: 'rgba(148,163,184,0.2)' },
+const DEPT_META: Record<Department, { label: string; icon: React.ReactNode; gradientFrom: string; gradientTo: string }> = {
+  CSE: { label: 'Computer Science', icon: <IoHardwareChipOutline />, gradientFrom: '#a955ff', gradientTo: '#ea51ff' },
+  ECE: { label: 'Electronics', icon: <IoPlanetOutline />, gradientFrom: '#56CCF2', gradientTo: '#2F80ED' },
+  Mechanical: { label: 'Mechanical', icon: <IoSettingsOutline />, gradientFrom: '#FF9966', gradientTo: '#FF5E62' },
+  Arts: { label: 'Arts & Culture', icon: <IoColorPaletteOutline />, gradientFrom: '#ffa9c6', gradientTo: '#f434e2' },
+  Sports: { label: 'Sports', icon: <IoFootballOutline />, gradientFrom: '#80FF72', gradientTo: '#7EE8FA' },
+  Management: { label: 'Management', icon: <IoBriefcaseOutline />, gradientFrom: '#F2C94C', gradientTo: '#F2994A' },
+  Science: { label: 'Science', icon: <IoFlaskOutline />, gradientFrom: '#11998e', gradientTo: '#38ef7d' },
+  General: { label: 'General / Other', icon: <IoHomeOutline />, gradientFrom: '#8E2DE2', gradientTo: '#4A00E0' },
 };
 
 // ── Date/time formatting helper ─────────────────────────
@@ -223,28 +234,81 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
               {/* All pill */}
               <button
                 onClick={() => setSelectedDept('All')}
-                className="whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300 hover:scale-105"
-                style={selectedDept === 'All'
-                  ? { background: '#3B82F6', color: '#fff', border: '1px solid transparent', boxShadow: '0 0 16px rgba(99,102,241,0.45)' }
-                  : { background: 'transparent', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.08)' }}
-                onMouseEnter={e => { if (selectedDept !== 'All') { e.currentTarget.style.background = 'rgba(59,130,246,0.1)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.boxShadow = '0 0 15px rgba(59,130,246,0.5)'; } }}
-                onMouseLeave={e => { if (selectedDept !== 'All') { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.boxShadow = 'none'; } }}
+                style={{ '--gradient-from': '#3B82F6', '--gradient-to': '#6366F1' } as React.CSSProperties}
+                className={cn(
+                  "relative h-[48px] shadow-lg rounded-full flex shrink-0 items-center justify-center transition-all duration-500 hover:shadow-none group cursor-pointer",
+                  selectedDept === 'All' ? "w-[120px] bg-transparent" : "w-[48px] bg-[#1a1f2e] hover:w-[120px]"
+                )}
               >
-                All
+                {/* Gradient background on hover / active */}
+                <span className={cn(
+                  "absolute inset-0 rounded-full bg-[linear-gradient(45deg,var(--gradient-from),var(--gradient-to))] transition-all duration-500",
+                  selectedDept === 'All' ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                )}></span>
+                {/* Blur glow */}
+                <span className={cn(
+                  "absolute top-[8px] inset-x-0 h-full rounded-full bg-[linear-gradient(45deg,var(--gradient-from),var(--gradient-to))] blur-[12px] -z-10 transition-all duration-500",
+                  selectedDept === 'All' ? "opacity-40" : "opacity-0 group-hover:opacity-40"
+                )}></span>
+
+                {/* Icon (Text 'All') */}
+                <span className={cn(
+                  "relative z-10 transition-all duration-500 absolute font-bold",
+                  selectedDept === 'All' ? "scale-0 opacity-0" : "scale-100 opacity-100 group-hover:scale-0 group-hover:opacity-0 text-[#94A3B8]"
+                )}>
+                  All
+                </span>
+
+                {/* Title */}
+                <span className={cn(
+                  "absolute text-white uppercase tracking-wide font-bold text-sm transition-all duration-500",
+                  selectedDept === 'All' ? "scale-100" : "scale-0 group-hover:scale-100"
+                )}>
+                  All
+                </span>
               </button>
+
               {DEPARTMENTS.map(dept => {
                 const meta = DEPT_META[dept];
                 const active = selectedDept === dept;
                 return (
-                  <button key={dept} onClick={() => setSelectedDept(dept)}
-                    className="whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300 hover:scale-105"
-                    style={active
-                      ? { background: meta.color, color: '#fff', border: '1px solid transparent', boxShadow: `0 0 16px ${meta.glow}` }
-                      : { background: 'transparent', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.08)' }}
-                    onMouseEnter={e => { if (!active) { e.currentTarget.style.background = `${meta.glow}`; e.currentTarget.style.color = '#fff'; e.currentTarget.style.boxShadow = `0 0 15px ${meta.color}80`; } }}
-                    onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.boxShadow = 'none'; } }}
+                  <button
+                    key={dept}
+                    onClick={() => setSelectedDept(dept)}
+                    title={dept}
+                    style={{ '--gradient-from': meta.gradientFrom, '--gradient-to': meta.gradientTo } as React.CSSProperties}
+                    className={cn(
+                      "relative h-[48px] shadow-lg rounded-full flex shrink-0 items-center justify-center transition-all duration-500 hover:shadow-none group cursor-pointer",
+                      active ? "w-[160px] bg-transparent" : "w-[48px] bg-[#1a1f2e] hover:w-[160px]"
+                    )}
                   >
-                    {meta.icon} {dept}
+                    {/* Gradient background on hover / active */}
+                    <span className={cn(
+                      "absolute inset-0 rounded-full bg-[linear-gradient(45deg,var(--gradient-from),var(--gradient-to))] transition-all duration-500",
+                      active ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                    )}></span>
+
+                    {/* Blur glow */}
+                    <span className={cn(
+                      "absolute top-[8px] inset-x-0 h-full rounded-full bg-[linear-gradient(45deg,var(--gradient-from),var(--gradient-to))] blur-[12px] -z-10 transition-all duration-500",
+                      active ? "opacity-40" : "opacity-0 group-hover:opacity-40"
+                    )}></span>
+
+                    {/* Icon */}
+                    <span className={cn(
+                      "relative z-10 transition-all duration-500 absolute flex items-center justify-center text-[20px]",
+                      active ? "scale-0 opacity-0" : "scale-100 opacity-100 group-hover:scale-0 group-hover:opacity-0 text-[#94A3B8]"
+                    )}>
+                      {meta.icon}
+                    </span>
+
+                    {/* Title */}
+                    <span className={cn(
+                      "absolute text-white uppercase tracking-wide font-bold text-[11px] whitespace-nowrap px-4 transition-all duration-500",
+                      active ? "scale-100" : "scale-0 group-hover:scale-100"
+                    )}>
+                      {dept}
+                    </span>
                   </button>
                 );
               })}
@@ -306,8 +370,8 @@ const DeptRow: React.FC<{
       <div className="mb-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {/* Accent dot + icon */}
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl"
-            style={{ background: meta.glow, border: `1px solid ${meta.color}30` }}>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl text-white shadow-lg"
+            style={{ backgroundImage: `linear-gradient(45deg, ${meta.gradientFrom}, ${meta.gradientTo})` }}>
             {meta.icon}
           </div>
           <div>
@@ -325,7 +389,7 @@ const DeptRow: React.FC<{
             <button key={dir} onClick={() => scroll(dir as 'left' | 'right')}
               className="flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200"
               style={{ border: '1px solid rgba(255,255,255,0.1)', color: '#94A3B8' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = meta.color; e.currentTarget.style.color = meta.color; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = meta.gradientFrom; e.currentTarget.style.color = meta.gradientFrom; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#94A3B8'; }}>
               <ChevronRight size={14} style={{ transform: rotate }} />
             </button>
@@ -437,26 +501,69 @@ const TicketsContent: React.FC<{
         <span className="text-xs font-medium whitespace-nowrap">Department</span>
       </div>
       <div className="h-4 w-px shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />
-      <button onClick={() => setSelectedDept('All')} className="whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300 hover:scale-105"
-        style={selectedDept === 'All'
-          ? { background: '#3B82F6', color: '#fff', border: '1px solid transparent', boxShadow: '0 0 16px rgba(99,102,241,0.45)' }
-          : { background: 'transparent', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.08)' }}
-        onMouseEnter={e => { if (selectedDept !== 'All') { e.currentTarget.style.background = 'rgba(59,130,246,0.1)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.boxShadow = '0 0 15px rgba(59,130,246,0.5)'; } }}
-        onMouseLeave={e => { if (selectedDept !== 'All') { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.boxShadow = 'none'; } }}
+      <button
+        onClick={() => setSelectedDept('All')}
+        style={{ '--gradient-from': '#3B82F6', '--gradient-to': '#6366F1' } as React.CSSProperties}
+        className={cn(
+          "relative h-[48px] shadow-lg rounded-full flex shrink-0 items-center justify-center transition-all duration-500 hover:shadow-none group cursor-pointer",
+          selectedDept === 'All' ? "w-[120px] bg-transparent" : "w-[48px] bg-[#1a1f2e] hover:w-[120px]"
+        )}
       >
-        All
+        <span className={cn(
+          "absolute inset-0 rounded-full bg-[linear-gradient(45deg,var(--gradient-from),var(--gradient-to))] transition-all duration-500",
+          selectedDept === 'All' ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+        )}></span>
+        <span className={cn(
+          "absolute top-[8px] inset-x-0 h-full rounded-full bg-[linear-gradient(45deg,var(--gradient-from),var(--gradient-to))] blur-[12px] -z-10 transition-all duration-500",
+          selectedDept === 'All' ? "opacity-40" : "opacity-0 group-hover:opacity-40"
+        )}></span>
+        <span className={cn(
+          "relative z-10 transition-all duration-500 absolute font-bold",
+          selectedDept === 'All' ? "scale-0 opacity-0" : "scale-100 opacity-100 group-hover:scale-0 group-hover:opacity-0 text-[#94A3B8]"
+        )}>
+          All
+        </span>
+        <span className={cn(
+          "absolute text-white uppercase tracking-wide font-bold text-sm transition-all duration-500",
+          selectedDept === 'All' ? "scale-100" : "scale-0 group-hover:scale-100"
+        )}>
+          All
+        </span>
       </button>
       {DEPARTMENTS.map(dept => {
         const meta = DEPT_META[dept];
         const active = selectedDept === dept;
         return (
-          <button key={dept} onClick={() => setSelectedDept(dept)} className="whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300 hover:scale-105"
-            style={active ? { background: meta.color, color: '#fff', border: '1px solid transparent', boxShadow: `0 0 16px ${meta.glow}` }
-              : { background: 'transparent', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.08)' }}
-            onMouseEnter={e => { if (!active) { e.currentTarget.style.background = `${meta.glow}`; e.currentTarget.style.color = '#fff'; e.currentTarget.style.boxShadow = `0 0 15px ${meta.color}80`; } }}
-            onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.boxShadow = 'none'; } }}
+          <button
+            key={dept}
+            onClick={() => setSelectedDept(dept)}
+            title={dept}
+            style={{ '--gradient-from': meta.gradientFrom, '--gradient-to': meta.gradientTo } as React.CSSProperties}
+            className={cn(
+              "relative h-[48px] shadow-lg rounded-full flex shrink-0 items-center justify-center transition-all duration-500 hover:shadow-none group cursor-pointer",
+              active ? "w-[160px] bg-transparent" : "w-[48px] bg-[#1a1f2e] hover:w-[160px]"
+            )}
           >
-            {meta.icon} {dept}
+            <span className={cn(
+              "absolute inset-0 rounded-full bg-[linear-gradient(45deg,var(--gradient-from),var(--gradient-to))] transition-all duration-500",
+              active ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+            )}></span>
+            <span className={cn(
+              "absolute top-[8px] inset-x-0 h-full rounded-full bg-[linear-gradient(45deg,var(--gradient-from),var(--gradient-to))] blur-[12px] -z-10 transition-all duration-500",
+              active ? "opacity-40" : "opacity-0 group-hover:opacity-40"
+            )}></span>
+            <span className={cn(
+              "relative z-10 transition-all duration-500 absolute flex items-center justify-center text-[20px]",
+              active ? "scale-0 opacity-0" : "scale-100 opacity-100 group-hover:scale-0 group-hover:opacity-0 text-[#94A3B8]"
+            )}>
+              {meta.icon}
+            </span>
+            <span className={cn(
+              "absolute text-white uppercase tracking-wide font-bold text-[11px] whitespace-nowrap px-4 transition-all duration-500",
+              active ? "scale-100" : "scale-0 group-hover:scale-100"
+            )}>
+              {dept}
+            </span>
           </button>
         );
       })}
