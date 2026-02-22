@@ -340,7 +340,7 @@ const DeptRow: React.FC<{
           const isJoined = myRegEventIds.has(event.id);
           const isFull = event.registered_count >= event.capacity;
           return (
-            <div key={event.id} className="shrink-0" style={{ width: '340px', scrollSnapAlign: 'start' }}>
+            <div key={event.id} className="shrink-0" style={{ width: 'min(340px, 85vw)', scrollSnapAlign: 'start' }}>
               <EventCard
                 imageUrl={event.image_url || `https://picsum.photos/seed/${event.id}/800/600`}
                 category={event.category}

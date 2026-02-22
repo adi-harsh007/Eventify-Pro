@@ -61,20 +61,20 @@ const HeroSection = React.forwardRef<HTMLDivElement, HeroSectionProps>(
         {...props}
       >
         {/* Left Side: Content */}
-        <div className="flex w-full flex-col justify-center p-8 md:w-3/5 md:p-12 lg:w-[60%] lg:p-16 z-10 bg-[#0B0F19]">
-          <div className="mt-16">
+        <div className="flex w-full flex-col justify-center p-6 sm:p-8 md:w-3/5 md:p-12 lg:w-[60%] lg:p-16 z-10 bg-[#0B0F19]">
+          <div className="mt-16 md:mt-0">
             <motion.main variants={containerVariants}>
-              <motion.h1 className="text-4xl font-black leading-[1.1] md:text-6xl lg:text-[4.5rem] tracking-tight text-white" variants={itemVariants}>
+              <motion.h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[4.5rem] font-black leading-[1.1] tracking-tight text-white mb-6" variants={itemVariants}>
                 {title}
               </motion.h1>
-              <motion.div className="my-8 h-1 w-20 bg-blue-500" variants={itemVariants}></motion.div>
-              <motion.p className="mb-10 max-w-lg text-lg text-neutral-400 font-light leading-relaxed" variants={itemVariants}>
+              <motion.div className="mb-8 hidden md:block h-1 w-20 bg-blue-500" variants={itemVariants}></motion.div>
+              <motion.p className="mb-10 max-w-lg text-base md:text-lg text-neutral-400 font-light leading-relaxed" variants={itemVariants}>
                 {subtitle}
               </motion.p>
               {callToAction.href ? (
                 <motion.a
                   href={callToAction.href}
-                  className="inline-block border border-white/20 bg-transparent px-8 py-4 text-[13px] font-bold tracking-[0.15em] uppercase text-white transition-all hover:bg-white hover:text-black rounded-none"
+                  className="block w-full md:inline-block md:w-auto text-center border border-white/20 bg-transparent px-8 py-4 text-[13px] font-bold tracking-[0.15em] uppercase text-white transition-all hover:bg-white hover:text-black rounded-none"
                   variants={itemVariants}
                 >
                   {callToAction.text}
@@ -82,7 +82,7 @@ const HeroSection = React.forwardRef<HTMLDivElement, HeroSectionProps>(
               ) : (
                 <motion.button
                   onClick={callToAction.onClick}
-                  className="inline-block border border-white/20 bg-transparent px-8 py-4 text-[13px] font-bold tracking-[0.15em] uppercase text-white transition-all hover:bg-white hover:text-black rounded-none"
+                  className="block w-full md:inline-block md:w-auto text-center border border-white/20 bg-transparent px-8 py-4 text-[13px] font-bold tracking-[0.15em] uppercase text-white transition-all hover:bg-white hover:text-black rounded-none"
                   variants={itemVariants}
                 >
                   {callToAction.text}

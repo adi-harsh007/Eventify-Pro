@@ -10,7 +10,7 @@ const HeroBentoGrid: React.FC<HeroBentoGridProps> = ({ onExploreClick }) => {
         <div className="w-full max-w-7xl mx-auto p-4 md:p-0">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[minmax(180px,auto)]">
                 {/* ── Main Featured Card (Col-span 2) ── */}
-                <div className="group relative col-span-1 md:col-span-2 row-span-2 overflow-hidden rounded-[20px] cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(59,130,246,0.2)] h-96 md:h-auto">
+                <div className="group relative col-span-1 md:col-span-2 row-span-2 overflow-hidden rounded-[20px] cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(59,130,246,0.2)] h-72 md:h-auto">
                     {/* Background Image */}
                     <img
                         src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=2670&auto=format&fit=crop"
@@ -31,7 +31,7 @@ const HeroBentoGrid: React.FC<HeroBentoGridProps> = ({ onExploreClick }) => {
 
                         <div className="space-y-4">
                             {/* Title with Sunset Gradient */}
-                            <h2 className="text-4xl md:text-5xl font-bold leading-tight tracking-tight">
+                            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight tracking-tight">
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">
                                     Campus Tech
                                 </span>
@@ -63,7 +63,7 @@ const HeroBentoGrid: React.FC<HeroBentoGridProps> = ({ onExploreClick }) => {
                 {/* ── Action Card (Explore All) ── */}
                 <div
                     onClick={onExploreClick}
-                    className="group relative col-span-1 row-span-2 overflow-hidden rounded-[20px] border border-[rgba(255,255,255,0.08)] bg-[#161E2E] cursor-pointer transition-all duration-300 hover:-translate-y-1 shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] h-96 md:h-auto flex flex-col items-center justify-center text-center p-8"
+                    className="group relative col-span-1 row-span-2 overflow-hidden rounded-[20px] border border-[rgba(255,255,255,0.08)] bg-[#161E2E] cursor-pointer transition-all duration-300 hover:-translate-y-1 shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.2)] h-72 md:h-auto flex flex-col items-center justify-center text-center p-8"
                 >
                     {/* Texture Overlay */}
                     <div

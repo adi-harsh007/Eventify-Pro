@@ -14,58 +14,18 @@ const LandingHero = ({ onGetStarted }: LandingHeroProps) => {
     }, []);
 
     return (
-        <div className="bg-[#0B0F19] min-h-screen text-slate-200 relative">
+        <div className="bg-[#0B0F19] min-h-screen text-slate-200 relative overflow-x-hidden">
             {/* ── Overlay Navbar ── */}
-            <nav
-                style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    zIndex: 50,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '16px 32px',
-                    background: 'transparent',
-                    backdropFilter: 'blur(8px)',
-                    WebkitBackdropFilter: 'blur(8px)',
-                }}
-            >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <Sparkles size={22} style={{ color: '#fb923c' }} />
-                    <span
-                        style={{
-                            fontSize: '20px',
-                            fontWeight: 700,
-                            color: '#fff',
-                            letterSpacing: '-0.5px',
-                        }}
-                    >
+            <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 md:px-8 py-4 bg-[#0B0F19]/80 backdrop-blur-md border-b border-white/5">
+                <div className="flex items-center gap-2">
+                    <Sparkles size={22} className="text-amber-400" />
+                    <span className="text-xl font-bold text-white tracking-tight">
                         Eventify Pro
                     </span>
                 </div>
                 <button
                     onClick={onGetStarted}
-                    style={{
-                        padding: '10px 24px',
-                        borderRadius: '10px',
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        border: '1px solid rgba(255,255,255,0.15)',
-                        backgroundColor: 'rgba(255,255,255,0.08)',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)';
-                        e.currentTarget.style.transform = 'translateY(-1px)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)';
-                        e.currentTarget.style.transform = 'translateY(0)';
-                    }}
+                    className="px-5 py-2 rounded-xl text-sm font-semibold border border-white/15 bg-white/10 text-white hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-0.5"
                     aria-label="Sign in to Eventify Pro"
                 >
                     Sign In
