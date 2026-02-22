@@ -78,9 +78,10 @@ const EventCard = React.forwardRef<HTMLDivElement, EventCardProps>(
                     </div>
 
                     <div className="absolute -bottom-20 left-0 w-full p-6 opacity-0 transition-all duration-500 ease-in-out group-hover:bottom-0 group-hover:opacity-100">
-                        <div className="flex items-end justify-between">
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-[#0B0F19]/90 to-transparent rounded-b-[20px]"></div>
+                        <div className="relative flex items-end justify-between">
                             <div>
-                                <span className="text-xl font-bold text-white block">{date}</span>
+                                <span className="text-sm font-bold text-white/90 block">{date}</span>
                             </div>
                             {/* Styling applied directly to match the design system accent */}
                             <Button

@@ -145,7 +145,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onEditEven
                                             {event.category}
                                         </span>
                                     </td>
-                                    <td className="whitespace-nowrap px-6 py-4 text-muted-foreground">{event.date}</td>
+                                    <td className="whitespace-nowrap px-6 py-4 text-muted-foreground">{new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
                                     <td className="px-6 py-4 text-muted-foreground">{event.registered_count}/{event.capacity}</td>
                                     <td className="max-w-[150px] truncate px-6 py-4 text-muted-foreground">{event.creator_email || '—'}</td>
                                     <td className="px-6 py-4">

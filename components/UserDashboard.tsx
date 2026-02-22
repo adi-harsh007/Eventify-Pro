@@ -31,6 +31,22 @@ const DEPT_META: Record<Department, { label: string; icon: string; color: string
   General: { label: 'General / Other', icon: '📌', color: '#94A3B8', glow: 'rgba(148,163,184,0.2)' },
 };
 
+// ── Date/time formatting helper ─────────────────────────
+function formatEventDateTime(dateStr: string, timeStr: string): string {
+  try {
+    const d = new Date(dateStr);
+    const formatted = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    // Parse time like "21:00:00" into "9:00 PM"
+    const [h, m] = timeStr.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hour12 = h % 12 || 12;
+    const timeFormatted = `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
+    return `${formatted} · ${timeFormatted}`;
+  } catch {
+    return `${dateStr} · ${timeStr}`;
+  }
+}
+
 const UserDashboard: React.FC<UserDashboardProps> = ({
   events,
   registrations,
@@ -331,7 +347,7 @@ const DeptRow: React.FC<{
                 title={event.title}
                 location={event.location}
                 description={event.description}
-                date={`${event.date} · ${event.time}`}
+                date={formatEventDateTime(event.date, event.time)}
                 isRegistered={isJoined}
                 isSoldOut={isFull && !isJoined}
                 onToggleRegistration={() => isJoined ? onLeaveEvent(event.id) : onJoinEvent(event.id)}
@@ -366,7 +382,7 @@ const EventGrid: React.FC<{
           title={event.title}
           location={event.location}
           description={event.description}
-          date={`${event.date} · ${event.time}`}
+          date={formatEventDateTime(event.date, event.time)}
           isRegistered={isJoined}
           isSoldOut={isFull && !isJoined}
           onToggleRegistration={() => isJoined ? onLeaveEvent(event.id) : onJoinEvent(event.id)}
