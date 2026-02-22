@@ -33,7 +33,9 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(helmet());
+app.use(helmet({
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }
+}));
 app.use(express.json({ limit: '1mb' }));  // #11: Prevent oversized payloads
 
 // Cloudinary Config
