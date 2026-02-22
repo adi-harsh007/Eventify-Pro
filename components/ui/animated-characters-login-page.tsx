@@ -321,6 +321,13 @@ function AnimatedLoginPage({ onLogin, onNavigateHome }: AnimatedLoginPageProps) 
                             </p>
                         </div>
 
+                        {/* Temporary notice */}
+                        <div className="mb-6 px-4 py-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-center">
+                            <p className="text-[11px] text-amber-300/80 leading-relaxed">
+                                ⚠️ Sorry for the inconvenience — please use <span className="font-semibold text-amber-200">Sign in with Google</span> to continue.
+                            </p>
+                        </div>
+
                         {/* Forgot Password Flow */}
                         {forgotMode ? (
                             <div className="flex flex-col gap-3">
