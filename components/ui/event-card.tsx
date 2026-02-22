@@ -68,7 +68,7 @@ const EventCard = React.forwardRef<HTMLDivElement, EventCardProps>(
                             )}
                         </div>
 
-                        <div className="space-y-4 transition-transform duration-500 ease-in-out group-hover:-translate-y-16">
+                        <div className="space-y-4 -translate-y-16 md:translate-y-0 transition-transform duration-500 ease-in-out md:group-hover:-translate-y-16">
                             <div>
                                 <h3 className="text-2xl font-bold text-white tracking-tight">{title}</h3>
                                 <p className="text-sm text-white/80 mt-1">{location}</p>
@@ -81,7 +81,7 @@ const EventCard = React.forwardRef<HTMLDivElement, EventCardProps>(
                             </div>
                         </div>
 
-                        <div className="absolute -bottom-20 left-0 w-full p-6 opacity-0 transition-all duration-500 ease-in-out group-hover:bottom-0 group-hover:opacity-100">
+                        <div className="absolute bottom-0 md:-bottom-20 left-0 w-full p-6 opacity-100 md:opacity-0 transition-all duration-500 ease-in-out md:group-hover:bottom-0 md:group-hover:opacity-100">
                             <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-[#0B0F19]/90 to-transparent rounded-b-[20px]"></div>
                             <div className="relative flex items-end justify-between">
                                 <div>
