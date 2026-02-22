@@ -85,11 +85,20 @@ const EventCard = React.forwardRef<HTMLDivElement, EventCardProps>(
                             </div>
                             {/* Styling applied directly to match the design system accent */}
                             <Button
-                                onClick={onToggleRegistration}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const action = isRegistered ? 'leave' : 'join';
+                                    const confirmed = window.confirm(
+                                        isRegistered
+                                            ? 'Are you sure you want to leave this event?'
+                                            : 'Would you like to register for this event?'
+                                    );
+                                    if (confirmed) onToggleRegistration();
+                                }}
                                 disabled={isSoldOut && !isRegistered}
                                 size="sm"
                                 className={cn(
-                                    "transition-all duration-300",
+                                    "cursor-pointer transition-all duration-300",
                                     isRegistered
                                         ? "bg-white/10 text-white hover:bg-red-500/20 hover:text-red-400 border border-white/10 hover:shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:scale-105"
                                         : isSoldOut
