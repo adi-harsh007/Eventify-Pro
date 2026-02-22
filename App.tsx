@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { User, EventItem, Registration, ViewState } from './types';
 import { apiGetEvents, apiGetRegistrations, apiJoinEvent, apiLeaveEvent, apiGetMe } from './apiService';
 import { AnimatedLoginPage } from './components/ui/animated-characters-login-page';
@@ -16,9 +17,10 @@ function App() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showLogin, setShowLogin] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
+
+  const navigate = useNavigate();
 
   // ── Auth ─────────────────────────────────────────
   const handleLogin = (user: User, tkn: string) => {
@@ -126,73 +128,84 @@ function App() {
     );
   }
 
-  if (!currentUser) {
-    if (!showLogin) {
-      return <LandingHero onGetStarted={() => setShowLogin(true)} />;
-    }
-    return <AnimatedLoginPage onLogin={handleLogin} onNavigateHome={() => setShowLogin(false)} />;
-  }
+  // ── Main App Layout ─────────────────────────────────────
+  const MainApp = () => {
+    const myRegisteredEventIds = new Set(registrations.map(r => r.event_id));
 
-  // ── Main App ─────────────────────────────────────
-  const myRegisteredEventIds = new Set(registrations.map(r => r.event_id));
+    return (
+      <div className="relative min-h-screen bg-background text-foreground font-sans antialiased">
+        {/* Ambient radial glow — matches landing page atmosphere */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-0"
+          style={{
+            background: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124,58,237,0.12) 0%, transparent 70%)',
+          }}
+        />
 
-  return (
-    <div className="relative min-h-screen bg-background text-foreground font-sans antialiased">
-      {/* Ambient radial glow — matches landing page atmosphere */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{
-          background: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124,58,237,0.12) 0%, transparent 70%)',
-        }}
-      />
+        <Navbar
+          user={currentUser!}
+          currentView={currentView}
+          onViewChange={setCurrentView}
+          onLogout={handleLogout}
+        />
 
-      <Navbar
-        user={currentUser}
-        currentView={currentView}
-        onViewChange={setCurrentView}
-        onLogout={handleLogout}
-      />
+        <main className={cn(
+          "relative z-10",
+          currentView === ViewState.EXPLORE
+            ? "w-full p-0 overflow-hidden"
+            : "mx-auto max-w-7xl px-6 py-8"
+        )}>
+          {currentView === ViewState.ADMIN && currentUser?.isAdmin ? (
+            <AdminDashboard currentUser={currentUser} onEditEvent={handleEditEvent} />
+          ) : currentView === ViewState.MY_TICKETS ? (
+            <UserDashboard
+              events={events.filter(e => myRegisteredEventIds.has(e.id))}
+              registrations={registrations}
+              currentUser={currentUser!}
+              onLeaveEvent={handleLeaveEvent}
+              onJoinEvent={handleJoinEvent}
+              viewMode="tickets"
+              onCreateEvent={currentUser?.isAdmin ? () => { setEditingEvent(null); setShowCreateModal(true); } : undefined}
+            />
+          ) : (
+            <UserDashboard
+              events={events}
+              registrations={registrations}
+              currentUser={currentUser!}
+              onJoinEvent={handleJoinEvent}
+              onLeaveEvent={handleLeaveEvent}
+              viewMode="explore"
+              onCreateEvent={currentUser?.isAdmin ? () => { setEditingEvent(null); setShowCreateModal(true); } : undefined}
+            />
+          )}
+        </main>
 
-      <main className={cn(
-        "relative z-10",
-        currentView === ViewState.EXPLORE
-          ? "w-full p-0 overflow-hidden"
-          : "mx-auto max-w-7xl px-6 py-8"
-      )}>
-        {currentView === ViewState.ADMIN && currentUser.isAdmin ? (
-          <AdminDashboard currentUser={currentUser} onEditEvent={handleEditEvent} />
-        ) : currentView === ViewState.MY_TICKETS ? (
-          <UserDashboard
-            events={events.filter(e => myRegisteredEventIds.has(e.id))}
-            registrations={registrations}
-            currentUser={currentUser}
-            onLeaveEvent={handleLeaveEvent}
-            onJoinEvent={handleJoinEvent}
-            viewMode="tickets"
-            onCreateEvent={currentUser.isAdmin ? () => { setEditingEvent(null); setShowCreateModal(true); } : undefined}
-          />
-        ) : (
-          <UserDashboard
-            events={events}
-            registrations={registrations}
-            currentUser={currentUser}
-            onJoinEvent={handleJoinEvent}
-            onLeaveEvent={handleLeaveEvent}
-            viewMode="explore"
-            onCreateEvent={currentUser.isAdmin ? () => { setEditingEvent(null); setShowCreateModal(true); } : undefined}
+        {showCreateModal && (
+          <CreateEventModal
+            onClose={() => { setShowCreateModal(false); setEditingEvent(null); }}
+            onEventCreated={handleEventCreated}
+            editingEvent={editingEvent}
           />
         )}
-      </main>
+      </div>
+    );
+  };
 
-      {showCreateModal && (
-        <CreateEventModal
-          onClose={() => { setShowCreateModal(false); setEditingEvent(null); }}
-          onEventCreated={handleEventCreated}
-          editingEvent={editingEvent}
-        />
-      )}
-    </div>
+  return (
+    <Routes>
+      <Route path="/login" element={
+        currentUser ? <Navigate to="/" replace /> : <AnimatedLoginPage onLogin={(u, t) => { handleLogin(u, t); navigate('/'); }} onNavigateHome={() => navigate('/')} />
+      } />
+      <Route path="/" element={
+        !currentUser ? (
+          <LandingHero onGetStarted={() => navigate('/login')} />
+        ) : (
+          <MainApp />
+        )
+      } />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
