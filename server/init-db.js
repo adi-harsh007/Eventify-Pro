@@ -43,6 +43,7 @@ async function runSQL() {
                 department VARCHAR(50) DEFAULT 'General',
                 image_url VARCHAR(500) DEFAULT '',
                 capacity INT DEFAULT 100,
+                registered_count INT NOT NULL DEFAULT 0,
                 price DECIMAL(10, 2) DEFAULT 0.00,
                 organizer_id INT NOT NULL,
                 status ENUM('upcoming', 'ongoing', 'completed', 'cancelled') DEFAULT 'upcoming',
@@ -50,6 +51,13 @@ async function runSQL() {
                 FOREIGN KEY (organizer_id) REFERENCES users(id) ON DELETE CASCADE
             )
         `);
+        // Add registered_count if missing (for existing databases)
+        try {
+            await pool.query(`ALTER TABLE events ADD COLUMN registered_count INT NOT NULL DEFAULT 0`);
+            console.log('  ↳ added missing registered_count column');
+        } catch (e) {
+            // Column already exists — ignore
+        }
         console.log('✅ events table created/verified');
 
         // 3. Registrations Table
