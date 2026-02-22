@@ -363,7 +363,7 @@ router.post('/forgot-password', async (req, res) => {
             </div>
         `;
 
-        await sendEmail(email.toLowerCase(), 'Eventify Pro - Password Reset Code', emailHtml);
+        const sent = await sendEmail(email.toLowerCase(), 'Eventify Pro - Password Reset Code', emailHtml);
 
         if (process.env.NODE_ENV !== 'production') {
             console.log(`\n========================================`);
@@ -371,6 +371,10 @@ router.post('/forgot-password', async (req, res) => {
             console.log(`To: ${email}`);
             console.log(`Code: ${otp}`);
             console.log(`========================================\n`);
+        }
+
+        if (!sent) {
+            logger.warn(`Reset email failed to send to ${email}`);
         }
 
         res.json({ message: 'If an account exists with this email, a reset code has been sent.' });
