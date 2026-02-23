@@ -36,12 +36,60 @@ async function initDB() {
             )
         `);
         // Ensure attempts column exists (migration for existing tables)
-        try {
-            await pool.query('ALTER TABLE otp_codes ADD COLUMN attempts INT DEFAULT 0');
-        } catch (e) {
-            // Column already exists, ignore
-        }
+        try { await pool.query('ALTER TABLE otp_codes ADD COLUMN attempts INT DEFAULT 0'); } catch (e) { }
         logger.info('✅ OTP tables verified');
+
+        // Mega Event Lineup
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS mega_event_lineup (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                day_label VARCHAR(50) NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                description TEXT,
+                event_date DATE,
+                event_time TIME,
+                icon_name VARCHAR(50) DEFAULT 'Calendar'
+            )
+        `);
+        const [lineupRows] = await pool.query('SELECT COUNT(*) as count FROM mega_event_lineup');
+        if (lineupRows[0].count === 0) {
+            await pool.query(`
+                INSERT INTO mega_event_lineup (day_label, title, description, icon_name) VALUES 
+                ('Day 1', 'Cultural Night', 'Experience the vibrant arts, dance, and traditional performances.', 'Calendar'),
+                ('Day 2', 'DJ Night', 'Get ready to drop the beat with top campus DJs and intense light shows.', 'Music'),
+                ('Day 3', 'Star Night', 'A live concert featuring a celebrity guest to close the fest in style.', 'Star')
+            `);
+        }
+
+        // Mega Registrations
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS mega_registrations (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                status ENUM('registered', 'cancelled') DEFAULT 'registered',
+                registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_mega_registration (user_id),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        `);
+
+        // Admin Todos
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS admin_todos (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                text VARCHAR(255) NOT NULL,
+                completed BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // Schema Migrations (Fail-safe)
+        try { await pool.query('ALTER TABLE events CHANGE organizer_id created_by INT NOT NULL'); } catch (e) { }
+        try { await pool.query('ALTER TABLE events ADD COLUMN is_team_event BOOLEAN DEFAULT FALSE'); } catch (e) { }
+        try { await pool.query('ALTER TABLE events ADD COLUMN max_team_size INT DEFAULT 1'); } catch (e) { }
+        try { await pool.query('ALTER TABLE registrations ADD COLUMN team_name VARCHAR(100) DEFAULT NULL'); } catch (e) { }
+
+        logger.info('✅ Database schema and migrations fully verified');
     } catch (err) {
         logger.error('Database connection failed:', err);
         process.exit(1);
