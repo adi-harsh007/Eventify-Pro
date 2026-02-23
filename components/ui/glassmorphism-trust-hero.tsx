@@ -6,30 +6,17 @@ import {
     Target,
     Crown,
     Star,
-    // Brand Icons
-    Hexagon,
-    Triangle,
-    Command,
-    Ghost,
-    Gem,
-    Cpu
+    // Social Links
+    Github,
+    Instagram,
+    Linkedin
 } from "lucide-react";
-
-// --- MOCK BRANDS ---
-const CLIENTS = [
-    { name: "Acme Corp", icon: Hexagon },
-    { name: "Quantum", icon: Triangle },
-    { name: "Command+Z", icon: Command },
-    { name: "Phantom", icon: Ghost },
-    { name: "Ruby", icon: Gem },
-    { name: "Chipset", icon: Cpu },
-];
 
 // --- SUB-COMPONENTS ---
 const StatItem = ({ value, label }: { value: string; label: string }) => (
     <div className="flex flex-col items-center justify-center transition-transform hover:-translate-y-1 cursor-default">
-        <span className="text-xl font-bold text-white sm:text-2xl">{value}</span>
-        <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium sm:text-xs">{label}</span>
+        <span className="text-xl font-bold text-white sm:text-2xl tracking-tight">{value}</span>
+        <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-bold sm:text-xs mt-0.5">{label}</span>
     </div>
 );
 
@@ -41,31 +28,20 @@ interface HeroProps {
 export default function GlassmorphismTrustHero({ onGetStarted }: HeroProps) {
     return (
         <div className="relative w-full min-h-screen bg-zinc-950 text-white overflow-hidden font-sans">
-            {/* SCOPED ANIMATIONS */}
-            <style>{`
-        @keyframes marquee {
-          from { transform: translateX(0); }
-          to { transform: translateX(-50%); }
-        }
-        .animate-marquee {
-          animation: marquee 40s linear infinite; /* Slower for readability */
-        }
-      `}</style>
-
             {/* Background Image with Gradient Mask */}
             <div
-                className="absolute inset-0 z-0 bg-[url(https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80)] bg-cover bg-center opacity-40 mix-blend-screen"
+                className="absolute inset-0 z-0 bg-[url(https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/a72ca2f3-9dd1-4fe4-84ba-fe86468a5237_3840w.webp?w=800&q=80)] bg-cover bg-center opacity-40 mix-blend-screen"
                 style={{
                     maskImage: "linear-gradient(180deg, transparent, black 10%, black 70%, transparent)",
                     WebkitMaskImage: "linear-gradient(180deg, transparent, black 10%, black 70%, transparent)",
                 }}
             />
 
-            <div className="relative z-10 mx-auto max-w-7xl px-4 pt-32 pb-12 sm:px-6 md:pt-40 md:pb-20 lg:px-8">
-                <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-8 items-start">
+            <div className="relative z-10 mx-auto max-w-7xl px-4 pt-24 pb-8 sm:px-6 md:pt-28 md:pb-12 lg:px-8">
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-6 items-center">
 
                     {/* --- LEFT COLUMN --- */}
-                    <div className="lg:col-span-7 flex flex-col justify-center space-y-8 pt-8">
+                    <div className="lg:col-span-7 flex flex-col justify-center space-y-6 pt-0">
 
                         {/* Badge */}
                         <motion.div
@@ -86,17 +62,17 @@ export default function GlassmorphismTrustHero({ onGetStarted }: HeroProps) {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-                            className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-medium tracking-tighter leading-[0.9]"
+                            className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-medium tracking-tighter leading-[0.9]"
                             style={{
                                 maskImage: "linear-gradient(180deg, black 0%, black 80%, transparent 100%)",
                                 WebkitMaskImage: "linear-gradient(180deg, black 0%, black 80%, transparent 100%)"
                             }}
                         >
-                            Crafting Digital<br />
+                            Enter the World<br />
                             <span className="bg-gradient-to-br from-white via-white to-[#ffcd75] bg-clip-text text-transparent">
-                                Experiences
+                                Of Events
                             </span><br />
-                            That Matter
+                            To Feel Alive Again
                         </motion.h1>
 
                         {/* Description */}
@@ -106,8 +82,8 @@ export default function GlassmorphismTrustHero({ onGetStarted }: HeroProps) {
                             transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
                             className="max-w-xl text-lg text-zinc-400 leading-relaxed"
                         >
-                            We design interfaces that combine beauty with functionality,
-                            creating seamless experiences that users love and businesses thrive on.
+                            Discover experiences that combine vibrant energy with community,
+                            creating unforgettable moments that inspire you and bring people together.
                         </motion.p>
 
                         {/* CTA Buttons */}
@@ -133,31 +109,36 @@ export default function GlassmorphismTrustHero({ onGetStarted }: HeroProps) {
                     </div>
 
                     {/* --- RIGHT COLUMN --- */}
-                    <div className="lg:col-span-5 space-y-6 lg:mt-12">
+                    <div className="lg:col-span-5 space-y-4 lg:mt-4">
 
                         {/* Stats Card */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
-                            className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl shadow-2xl"
+                            className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl shadow-2xl"
                         >
                             {/* Card Glow Effect */}
                             <div className="absolute top-0 right-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-white/5 blur-3xl pointer-events-none" />
 
                             <div className="relative z-10">
-                                <div className="flex items-center gap-4 mb-8">
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20">
-                                        <Target className="h-6 w-6 text-white" />
+                                <div className="flex items-center gap-4 mb-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20">
+                                        <Target className="h-5 w-5 text-white" />
                                     </div>
                                     <div>
-                                        <div className="text-3xl font-bold tracking-tight text-white">1000+</div>
-                                        <div className="text-sm text-zinc-400">Events Hosted</div>
+                                        <div className="text-2xl font-bold tracking-tight text-white">1000+</div>
+                                        <div className="text-xs text-zinc-400">Events Hosted</div>
                                     </div>
                                 </div>
 
+                                <p className="text-sm text-zinc-400 leading-relaxed mb-6 pr-4">
+                                    Eventify Pro is your ultimate platform to discover, organize, and experience
+                                    university events seamlessly.
+                                </p>
+
                                 {/* Progress Bar Section */}
-                                <div className="space-y-3 mb-8">
+                                <div className="space-y-2 mb-6">
                                     <div className="flex justify-between text-sm">
                                         <span className="text-zinc-400">Satisfaction Rate</span>
                                         <span className="text-white font-medium">99%</span>
@@ -167,19 +148,20 @@ export default function GlassmorphismTrustHero({ onGetStarted }: HeroProps) {
                                     </div>
                                 </div>
 
-                                <div className="h-px w-full bg-white/10 mb-6" />
+                                <div className="h-px w-full bg-white/10 mb-4" />
 
-                                {/* Mini Stats Grid */}
-                                <div className="grid grid-cols-3 gap-4 text-center">
+                                {/* Mini Stats Grid (2-1 Layout) */}
+                                <div className="grid grid-cols-2 gap-y-8 gap-x-4 text-center mt-6 mb-6 relative">
                                     <StatItem value="10k+" label="Users" />
-                                    <div className="w-px h-full bg-white/10 mx-auto" />
+                                    <div className="absolute left-1/2 -translate-x-1/2 w-px h-12 bg-white/10 top-2" />
                                     <StatItem value="24/7" label="Support" />
-                                    <div className="w-px h-full bg-white/10 mx-auto" />
-                                    <StatItem value="100%" label="Uptime" />
+                                    <div className="col-span-2 mt-2">
+                                        <StatItem value="100%" label="Uptime" />
+                                    </div>
                                 </div>
 
                                 {/* Tag Pills */}
-                                <div className="mt-8 flex flex-wrap gap-2">
+                                <div className="mt-6 flex flex-wrap gap-2">
                                     <div className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-medium tracking-wide text-zinc-300">
                                         <span className="relative flex h-2 w-2">
                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -195,38 +177,25 @@ export default function GlassmorphismTrustHero({ onGetStarted }: HeroProps) {
                             </div>
                         </motion.div>
 
-                        {/* Marquee Card */}
+                        {/* Social Links Card */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }}
-                            className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 py-8 backdrop-blur-xl"
+                            className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 py-6 px-6 backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-4"
                         >
-                            <h3 className="mb-6 px-8 text-sm font-medium text-zinc-400">Trusted by Global Events</h3>
+                            <h3 className="text-sm font-medium text-zinc-400">Connect with Us</h3>
 
-                            <div
-                                className="relative flex overflow-hidden"
-                                style={{
-                                    maskImage: "linear-gradient(to right, transparent, black 20%, black 80%, transparent)",
-                                    WebkitMaskImage: "linear-gradient(to right, transparent, black 20%, black 80%, transparent)"
-                                }}
-                            >
-                                <div className="animate-marquee flex gap-12 whitespace-nowrap px-4">
-                                    {/* Triple list for seamless loop */}
-                                    {[...CLIENTS, ...CLIENTS, ...CLIENTS].map((client, i) => (
-                                        <div
-                                            key={i}
-                                            className="flex items-center gap-2 opacity-50 transition-all hover:opacity-100 hover:scale-105 cursor-default grayscale hover:grayscale-0"
-                                        >
-                                            {/* Brand Icon */}
-                                            <client.icon className="h-6 w-6 text-white text-amber-400" />
-                                            {/* Brand Name */}
-                                            <span className="text-lg font-bold text-white tracking-tight">
-                                                {client.name}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
+                            <div className="flex items-center gap-6">
+                                <a href="https://github.com/adi-harsh007" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-white transition-colors">
+                                    <Github className="w-5 h-5" />
+                                </a>
+                                <a href="https://linkedin.com/in/" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-white transition-colors">
+                                    <Linkedin className="w-5 h-5" />
+                                </a>
+                                <a href="https://instagram.com/" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-white transition-colors">
+                                    <Instagram className="w-5 h-5" />
+                                </a>
                             </div>
                         </motion.div>
 
