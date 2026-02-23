@@ -11,221 +11,243 @@ Determine the default path for components and styles.
 If default path for components is not /components/ui, provide instructions on why it's important to create this folder
 Copy-paste this component to /components/ui folder:
 ```tsx
-interactive-selector.tsx
-import React, { useState, useEffect } from 'react';
-import { FaCampground, FaFire, FaTint, FaHotTub, FaHiking } from 'react-icons/fa';
+glassmorphism-trust-hero.tsx
+import React from "react";
+import { 
+  ArrowRight, 
+  Play, 
+  Target, 
+  Crown, 
+  Star,
+  // Brand Icons
+  Hexagon,
+  Triangle,
+  Command,
+  Ghost,
+  Gem,
+  Cpu
+} from "lucide-react";
 
-const InteractiveSelector = () => {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [animatedOptions, setAnimatedOptions] = useState([]);
-  
-  const options = [
-    {
-      title: "Luxury Tent",
-      description: "Cozy glamping under the stars",
-      image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
-      icon: <FaCampground size={24} className="text-white" />
-    },
-    {
-      title: "Campfire Feast",
-      description: "Gourmet s'mores & stories",
-      image: "https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=800&q=80",
-      icon: <FaFire size={24} className="text-white" />
-    },
-    {
-      title: "Lakeside Retreat",
-      description: "Private dock & canoe rides",
-      image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
-      icon: <FaTint size={24} className="text-white" />
-    },
-    {
-      title: "Mountain Spa",
-      description: "Outdoor sauna & hot tub",
-      image: "https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=800&q=80",
-      icon: <FaHotTub size={24} className="text-white" />
-    },
-    {
-      title: "Guided Adventure",
-      description: "Expert-led nature tours",
-      image: "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=800&q=80",
-      icon: <FaHiking size={24} className="text-white" />
-    }
-  ];
+// --- MOCK BRANDS ---
+// Replaced PNGs with Lucide icons to simulate tech logos
+const CLIENTS = [
+  { name: "Acme Corp", icon: Hexagon },
+  { name: "Quantum", icon: Triangle },
+  { name: "Command+Z", icon: Command },
+  { name: "Phantom", icon: Ghost },
+  { name: "Ruby", icon: Gem },
+  { name: "Chipset", icon: Cpu },
+];
 
-  const handleOptionClick = (index) => {
-    if (index !== activeIndex) {
-      setActiveIndex(index);
-    }
-  };
+// --- SUB-COMPONENTS ---
+const StatItem = ({ value, label }: { value: string; label: string }) => (
+  <div className="flex flex-col items-center justify-center transition-transform hover:-translate-y-1 cursor-default">
+    <span className="text-xl font-bold text-white sm:text-2xl">{value}</span>
+    <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium sm:text-xs">{label}</span>
+  </div>
+);
 
-  useEffect(() => {
-    const timers = [];
-    
-    options.forEach((_, i) => {
-      const timer = setTimeout(() => {
-        setAnimatedOptions(prev => [...prev, i]);
-      }, 180 * i);
-      timers.push(timer);
-    });
-    
-    return () => {
-      timers.forEach(timer => clearTimeout(timer));
-    };
-  }, []);
-
+// --- MAIN COMPONENT ---
+export default function HeroSection() {
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen bg-[#222] font-sans text-white"> 
-      {/* Header Section */}
-      <div className="w-full max-w-2xl px-6 mt-8 mb-2 text-center">
-        <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-3 tracking-tight drop-shadow-lg animate-fadeInTop delay-300">Escape in Style</h1>
-        <p className="text-lg md:text-xl text-gray-300 font-medium max-w-xl mx-auto animate-fadeInTop delay-600">Discover luxurious camping experiences in nature’s most breathtaking spots.</p>
-      </div>
+    <div className="relative w-full bg-zinc-950 text-white overflow-hidden font-sans">
+      {/* 
+        SCOPED ANIMATIONS 
+      */}
+      <style>{`
+        @keyframes fadeSlideIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes marquee {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
+        .animate-fade-in {
+          animation: fadeSlideIn 0.8s ease-out forwards;
+          opacity: 0;
+        }
+        .animate-marquee {
+          animation: marquee 40s linear infinite; /* Slower for readability */
+        }
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+        .delay-400 { animation-delay: 0.4s; }
+        .delay-500 { animation-delay: 0.5s; }
+      `}</style>
 
-      <div className="h-12"></div>
+      {/* Background Image with Gradient Mask */}
+      <div 
+        className="absolute inset-0 z-0 bg-[url(https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/a72ca2f3-9dd1-4fe4-84ba-fe86468a5237_3840w.webp?w=800&q=80)] bg-cover bg-center opacity-40"
+        style={{
+          maskImage: "linear-gradient(180deg, transparent, black 0%, black 70%, transparent)",
+          WebkitMaskImage: "linear-gradient(180deg, transparent, black 0%, black 70%, transparent)",
+        }}
+      />
 
-      {/* Options Container */}
-      <div className="options flex w-full max-w-[900px] min-w-[600px] h-[400px] mx-0 items-stretch overflow-hidden relative">
-        {options.map((option, index) => (
-          <div
-            key={index}
-            className={`
-              option relative flex flex-col justify-end overflow-hidden transition-all duration-700 ease-in-out
-              ${activeIndex === index ? 'active' : ''}
-            `}
-            style={{
-              backgroundImage: `url('${option.image}')`,
-              backgroundSize: activeIndex === index ? 'auto 100%' : 'auto 120%',
-              backgroundPosition: 'center',
-              backfaceVisibility: 'hidden',
-              opacity: animatedOptions.includes(index) ? 1 : 0,
-              transform: animatedOptions.includes(index) ? 'translateX(0)' : 'translateX(-60px)',
-              minWidth: '60px',
-              minHeight: '100px',
-              margin: 0,
-              borderRadius: 0,
-              borderWidth: '2px',
-              borderStyle: 'solid',
-              borderColor: activeIndex === index ? '#fff' : '#292929',
-              cursor: 'pointer',
-              backgroundColor: '#18181b',
-              boxShadow: activeIndex === index 
-                ? '0 20px 60px rgba(0,0,0,0.50)' 
-                : '0 10px 30px rgba(0,0,0,0.30)',
-              flex: activeIndex === index ? '7 1 0%' : '1 1 0%',
-              zIndex: activeIndex === index ? 10 : 1,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'flex-end',
-              position: 'relative',
-              overflow: 'hidden',
-              willChange: 'flex-grow, box-shadow, background-size, background-position'
-            }}
-            onClick={() => handleOptionClick(index)}
-          >
-            {/* Shadow effect */}
-            <div 
-              className="shadow absolute left-0 right-0 pointer-events-none transition-all duration-700 ease-in-out"
-              style={{
-                bottom: activeIndex === index ? '0' : '-40px',
-                height: '120px',
-                boxShadow: activeIndex === index 
-                  ? 'inset 0 -120px 120px -120px #000, inset 0 -120px 120px -80px #000' 
-                  : 'inset 0 -120px 0px -120px #000, inset 0 -120px 0px -80px #000'
-              }}
-            ></div>
+      <div className="relative z-10 mx-auto max-w-7xl px-4 pt-24 pb-12 sm:px-6 md:pt-32 md:pb-20 lg:px-8">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-8 items-start">
+          
+          {/* --- LEFT COLUMN --- */}
+          <div className="lg:col-span-7 flex flex-col justify-center space-y-8 pt-8">
             
-            {/* Label with icon and info */}
-            <div className="label absolute left-0 right-0 bottom-5 flex items-center justify-start h-12 z-2 pointer-events-none px-4 gap-3 w-full">
-              <div className="icon min-w-[44px] max-w-[44px] h-[44px] flex items-center justify-center rounded-full bg-[rgba(32,32,32,0.85)] backdrop-blur-[10px] shadow-[0_1px_4px_rgba(0,0,0,0.18)] border-2 border-[#444] flex-shrink-0 flex-grow-0 transition-all duration-200">
-                {option.icon}
+            {/* Badge */}
+            <div className="animate-fade-in delay-100">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 backdrop-blur-md transition-colors hover:bg-white/10">
+                <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
+                  Award-Winning Design
+                  <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
+                </span>
               </div>
-              <div className="info text-white whitespace-pre relative">
-                <div 
-                  className="main font-bold text-lg transition-all duration-700 ease-in-out"
-                  style={{
-                    opacity: activeIndex === index ? 1 : 0,
-                    transform: activeIndex === index ? 'translateX(0)' : 'translateX(25px)'
-                  }}
-                >
-                  {option.title}
+            </div>
+
+            {/* Heading */}
+            <h1 
+              className="animate-fade-in delay-200 text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-medium tracking-tighter leading-[0.9]"
+              style={{
+                maskImage: "linear-gradient(180deg, black 0%, black 80%, transparent 100%)",
+                WebkitMaskImage: "linear-gradient(180deg, black 0%, black 80%, transparent 100%)"
+              }}
+            >
+              Crafting Digital<br />
+              <span className="bg-gradient-to-br from-white via-white to-[#ffcd75] bg-clip-text text-transparent">
+                Experiences
+              </span><br />
+              That Matter
+            </h1>
+
+            {/* Description */}
+            <p className="animate-fade-in delay-300 max-w-xl text-lg text-zinc-400 leading-relaxed">
+              We design interfaces that combine beauty with functionality,
+              creating seamless experiences that users love and businesses thrive on.
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="animate-fade-in delay-400 flex flex-col sm:flex-row gap-4">
+              <button className="group inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-sm font-semibold text-zinc-950 transition-all hover:scale-[1.02] hover:bg-zinc-200 active:scale-[0.98]">
+                View Portfolio
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </button>
+              
+              <button className="group inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-8 py-4 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/10 hover:border-white/20">
+                <Play className="w-4 h-4 fill-current" />
+                Watch Showreel
+              </button>
+            </div>
+          </div>
+
+          {/* --- RIGHT COLUMN --- */}
+          <div className="lg:col-span-5 space-y-6 lg:mt-12">
+            
+            {/* Stats Card */}
+            <div className="animate-fade-in delay-500 relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl shadow-2xl">
+              {/* Card Glow Effect */}
+              <div className="absolute top-0 right-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-white/5 blur-3xl pointer-events-none" />
+
+              <div className="relative z-10">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20">
+                    <Target className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-3xl font-bold tracking-tight text-white">150+</div>
+                    <div className="text-sm text-zinc-400">Projects Delivered</div>
+                  </div>
                 </div>
-                <div 
-                  className="sub text-base text-gray-300 transition-all duration-700 ease-in-out"
-                  style={{
-                    opacity: activeIndex === index ? 1 : 0,
-                    transform: activeIndex === index ? 'translateX(0)' : 'translateX(25px)'
-                  }}
-                >
-                  {option.description}
+
+                {/* Progress Bar Section */}
+                <div className="space-y-3 mb-8">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-400">Client Satisfaction</span>
+                    <span className="text-white font-medium">98%</span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-800/50">
+                    <div className="h-full w-[98%] rounded-full bg-gradient-to-r from-white to-zinc-400" />
+                  </div>
+                </div>
+
+                <div className="h-px w-full bg-white/10 mb-6" />
+
+                {/* Mini Stats Grid */}
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <StatItem value="5+" label="Years" />
+                  <div className="w-px h-full bg-white/10 mx-auto" />
+                  <StatItem value="24/7" label="Support" />
+                  <div className="w-px h-full bg-white/10 mx-auto" />
+                  <StatItem value="100%" label="Quality" />
+                </div>
+
+                {/* Tag Pills */}
+                <div className="mt-8 flex flex-wrap gap-2">
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-medium tracking-wide text-zinc-300">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                    ACTIVE
+                  </div>
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-medium tracking-wide text-zinc-300">
+                    <Crown className="w-3 h-3 text-yellow-500" />
+                    PREMIUM
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Marquee Card */}
+            <div className="animate-fade-in delay-500 relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 py-8 backdrop-blur-xl">
+              <h3 className="mb-6 px-8 text-sm font-medium text-zinc-400">Trusted by Industry Leaders</h3>
+              
+              <div 
+                className="relative flex overflow-hidden"
+                style={{
+                  maskImage: "linear-gradient(to right, transparent, black 20%, black 80%, transparent)",
+                  WebkitMaskImage: "linear-gradient(to right, transparent, black 20%, black 80%, transparent)"
+                }}
+              >
+                <div className="animate-marquee flex gap-12 whitespace-nowrap px-4">
+                  {/* Triple list for seamless loop */}
+                  {[...CLIENTS, ...CLIENTS, ...CLIENTS].map((client, i) => (
+                    <div 
+                      key={i}
+                      className="flex items-center gap-2 opacity-50 transition-all hover:opacity-100 hover:scale-105 cursor-default grayscale hover:grayscale-0"
+                    >
+                      {/* Brand Icon */}
+                      <client.icon className="h-6 w-6 text-white fill-current" />
+                      {/* Brand Name */}
+                      <span className="text-lg font-bold text-white tracking-tight">
+                        {client.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
           </div>
-        ))}
+        </div>
       </div>
-      
-      {/* Custom animations */}
-      <style jsx>{`
-        @keyframes slideFadeIn {
-          0% {
-            opacity: 0;
-            transform: translateX(-60px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        
-        @keyframes fadeInFromTop {
-          0% {
-            opacity: 0;
-            transform: translateY(-20px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        .animate-fadeInTop {
-          opacity: 0;
-          transform: translateY(-20px);
-          animation: fadeInFromTop 0.8s ease-in-out forwards;
-        }
-        
-        .delay-300 {
-          animation-delay: 0.3s;
-        }
-        
-        .delay-600 {
-          animation-delay: 0.6s;
-        }
-      `}</style>
     </div>
   );
-};
-
-export default InteractiveSelector;
+}
 
 demo.tsx
-import InteractiveSelector from "@/components/ui/interactive-selector";
+import React from 'react';
+import HeroSection from '@/components/ui/glassmorphism-trust-hero';
 
-const DemoOne = () => {
+export default function HeroDemo() {
   return (
-    <div className="w-full h-min-screen">
-    <InteractiveSelector />
+    <div className="w-full h-screen overflow-y-auto bg-zinc-950">
+      <HeroSection />
     </div>
   );
-};
-
-export { DemoOne };
-
+}
 ```
 
 Install NPM dependencies:
 ```bash
-react-icons
+lucide-react
 ```
 
 Implementation Guidelines

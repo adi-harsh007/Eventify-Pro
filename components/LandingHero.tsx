@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
-import { HeroSection } from './ui/hero-odyssey';
-import InteractiveSelector from './ui/interactive-selector';
+import GlassmorphismTrustHero from './ui/glassmorphism-trust-hero';
 
 interface LandingHeroProps {
     onGetStarted: () => void;
@@ -31,27 +30,15 @@ const LandingHero = ({ onGetStarted }: LandingHeroProps) => {
                 </button>
             </nav>
 
-            {/* First Stacked Section: Hero */}
-            <section className="h-screen w-full relative sticky top-0 z-10 bg-black">
-                <HeroSection onGetStarted={onGetStarted} />
+            {/* Main Hero Section */}
+            <section className="w-full relative z-10 bg-black">
+                <GlassmorphismTrustHero onGetStarted={onGetStarted} />
             </section>
 
-            {/* Second Stacked Section: Interactive Selector */}
-            {/* The min-h-screen makes it take full space, rounding the top makes it look like a slide-up card */}
-            <section className="min-h-screen w-full relative z-20 bg-black rounded-t-[3rem] overflow-hidden border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] flex flex-col pt-12">
-                {/* Radial ambient glow to match hero context inside the wrapper */}
-                <div className="absolute top-[20%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-gradient-to-b from-amber-500/10 to-transparent blur-3xl pointer-events-none"></div>
-
-                {/* Content expands to push footer down */}
-                <div className="w-full flex-grow flex flex-col items-center z-10">
-                    <InteractiveSelector />
-                </div>
-
-                {/* Footer space inside second stacked section */}
-                <div className="w-full py-8 mt-12 text-center text-gray-500 text-sm shrink-0 border-t border-white/5 z-10 bg-black/50 backdrop-blur-sm">
-                    © {new Date().getFullYear()} Eventify Pro. All rights reserved.
-                </div>
-            </section>
+            {/* Footer space */}
+            <div className="w-full py-8 text-center text-gray-500 text-sm shrink-0 border-t border-white/5 z-10 bg-black backdrop-blur-sm">
+                © {new Date().getFullYear()} Eventify Pro. All rights reserved.
+            </div>
         </div>
     );
 };
