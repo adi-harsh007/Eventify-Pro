@@ -130,7 +130,6 @@ async function runSQL() {
         console.log('✅ admin_todos table created/verified');
 
         console.log('\n🎉 ALL DATABASE TABLES SUCCESSFULLY INITIALIZED! 🎉');
-        process.exit(0);
     } catch (e) {
         console.error('❌ Database Initialization Failed:', e);
         process.exit(1);
