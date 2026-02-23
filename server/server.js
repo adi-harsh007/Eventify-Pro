@@ -146,6 +146,16 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.get('/api/health/db', async (req, res) => {
+    try {
+        const db = getDB();
+        const [tables] = await db.query('SHOW TABLES');
+        res.json({ tables });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ── 404 handler ─────────────────────────────────────
 app.use((req, res) => {
     res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });
