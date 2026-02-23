@@ -38,10 +38,15 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ editingEvent, onClo
     category: 'Workshop',
     department: 'General',
     imageUrl: '',
+    is_team_event: false,
+    max_team_size: 1,
+    no_of_teams: 10,
   });
 
   useEffect(() => {
     if (editingEvent) {
+      const isTeam = !!editingEvent.is_team_event;
+      const maxSize = editingEvent.max_team_size || 1;
       setFormData({
         title: editingEvent.title,
         description: editingEvent.description,
@@ -52,6 +57,9 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ editingEvent, onClo
         category: editingEvent.category,
         department: editingEvent.department || 'General',
         imageUrl: editingEvent.image_url || '',
+        is_team_event: isTeam,
+        max_team_size: maxSize,
+        no_of_teams: isTeam ? Math.max(1, Math.floor((editingEvent.capacity || 1) / maxSize)) : 10,
       });
     }
   }, [editingEvent]);
@@ -62,10 +70,15 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ editingEvent, onClo
     setError('');
 
     try {
+      const payload = { ...formData };
+      if (payload.is_team_event) {
+        payload.capacity = payload.no_of_teams * payload.max_team_size;
+      }
+
       if (editingEvent) {
-        await apiUpdateEvent(editingEvent.id, formData);
+        await apiUpdateEvent(editingEvent.id, payload);
       } else {
-        await apiCreateEvent(formData);
+        await apiCreateEvent(payload);
       }
       onEventCreated();
     } catch (err: any) {
@@ -164,15 +177,59 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ editingEvent, onClo
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-400">
-                <Users size={14} className="text-indigo-400" /> Max Capacity
+            {!formData.is_team_event && (
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-400">
+                  <Users size={14} className="text-indigo-400" /> Max Capacity
+                </label>
+                <input type="number" required min="1"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-all focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 hover:border-white/20"
+                  value={formData.capacity}
+                  onChange={e => setFormData(p => ({ ...p, capacity: parseInt(e.target.value) || 1 }))}
+                />
+              </div>
+            )}
+
+            {/* Team Event Toggles */}
+            <div className={`space-y-4 md:col-span-2 rounded-xl border border-white/10 bg-white/5 p-4`}>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={formData.is_team_event}
+                    onChange={(e) => setFormData(p => ({ ...p, is_team_event: e.target.checked, max_team_size: e.target.checked ? p.max_team_size : 1 }))}
+                  />
+                  <div className={`block w-10 h-6 rounded-full transition-colors ${formData.is_team_event ? 'bg-indigo-500' : 'bg-white/20'}`}></div>
+                  <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${formData.is_team_event ? 'transform translate-x-4' : ''}`}></div>
+                </div>
+                <div className="text-sm font-semibold text-white">This is a Team Event</div>
               </label>
-              <input type="number" required min="1"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-all focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 hover:border-white/20"
-                value={formData.capacity}
-                onChange={e => setFormData(p => ({ ...p, capacity: parseInt(e.target.value) || 1 }))}
-              />
+
+              {formData.is_team_event && (
+                <div className="pl-14 grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-400">
+                      <Users size={14} className="text-indigo-400" /> No. of Teams
+                    </label>
+                    <input type="number" required min="1"
+                      className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition-all focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/10 hover:border-white/20"
+                      value={formData.no_of_teams}
+                      onChange={e => setFormData(p => ({ ...p, no_of_teams: parseInt(e.target.value) || 1 }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-400">
+                      <Users size={14} className="text-indigo-400" /> Max Members per Team
+                    </label>
+                    <input type="number" required min="2"
+                      className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition-all focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/10 hover:border-white/20"
+                      value={formData.max_team_size}
+                      onChange={e => setFormData(p => ({ ...p, max_team_size: parseInt(e.target.value) || 2 }))}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="md:col-span-2 space-y-2">

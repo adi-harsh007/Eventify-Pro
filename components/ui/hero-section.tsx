@@ -3,10 +3,10 @@
 
 import React from 'react';
 import { cn } from "@/lib/utils";
-import { motion } from 'framer-motion';
+import { motion, HTMLMotionProps } from 'framer-motion';
 import { Globe, Phone, MapPin } from 'lucide-react';
 
-interface HeroSectionProps extends React.HTMLAttributes<HTMLDivElement> {
+interface HeroSectionProps extends Omit<HTMLMotionProps<"section">, 'title'> {
   logo?: {
     url: string;
     alt: string;
@@ -44,7 +44,7 @@ const HeroSection = React.forwardRef<HTMLDivElement, HeroSectionProps>(
       visible: {
         y: 0,
         opacity: 1,
-        transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }, // Smoother custom spring-like easing
+        transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as any }, // Smoother custom spring-like easing
       },
     };
 
@@ -118,7 +118,7 @@ const HeroSection = React.forwardRef<HTMLDivElement, HeroSectionProps>(
             className="w-full h-full object-cover absolute inset-0 md:opacity-100 opacity-40 object-center"
             initial={{ clipPath: 'polygon(100% 0, 100% 0, 100% 100%, 100% 100%)' }}
             animate={{ clipPath: 'polygon(15% 0, 100% 0, 100% 100%, 0% 100%)' }}
-            transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+            transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] as any, delay: 0.1 }}
           />
           {/* Gradient overlay for mobile readability */}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent md:hidden" />

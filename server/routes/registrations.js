@@ -53,7 +53,7 @@ router.post('/', authenticate, async (req, res) => {
     const conn = await pool.getConnection();
 
     try {
-        const { eventId } = req.body;
+        const { eventId, teamName } = req.body;
         if (!eventId) {
             conn.release();
             return res.status(400).json({ message: 'Event ID is required.' });
@@ -63,7 +63,7 @@ router.post('/', authenticate, async (req, res) => {
 
         // Lock the event row
         const [events] = await conn.query(
-            'SELECT id, capacity, registered_count FROM events WHERE id = ? FOR UPDATE',
+            'SELECT id, capacity, registered_count, is_team_event, max_team_size FROM events WHERE id = ? FOR UPDATE',
             [eventId]
         );
 
@@ -80,11 +80,31 @@ router.post('/', authenticate, async (req, res) => {
             return res.status(400).json({ message: 'This event is at full capacity.' });
         }
 
+        if (event.is_team_event) {
+            if (!teamName) {
+                await conn.rollback();
+                conn.release();
+                return res.status(400).json({ message: 'A team name is required for this event.' });
+            }
+
+            // Check how many people are already registered under this team
+            const [teamCounts] = await conn.query(
+                'SELECT COUNT(*) as member_count FROM registrations WHERE event_id = ? AND team_name = ? FOR UPDATE',
+                [eventId, teamName]
+            );
+
+            if (teamCounts[0].member_count >= event.max_team_size) {
+                await conn.rollback();
+                conn.release();
+                return res.status(400).json({ message: `Team "${teamName}" is already full (max ${event.max_team_size} members).` });
+            }
+        }
+
         // Attempt insert (unique constraint catches duplicates)
         try {
             await conn.query(
-                'INSERT INTO registrations (user_id, event_id) VALUES (?, ?)',
-                [req.user.id, eventId]
+                'INSERT INTO registrations (user_id, event_id, team_name) VALUES (?, ?, ?)',
+                [req.user.id, eventId, event.is_team_event ? teamName : null]
             );
         } catch (err) {
             if (err.code === 'ER_DUP_ENTRY') {

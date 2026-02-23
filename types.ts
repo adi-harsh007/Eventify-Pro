@@ -1,8 +1,8 @@
-// ── Enums ────────────────────────────────────────────
 export enum ViewState {
   EXPLORE = 'EXPLORE',
-  MY_TICKETS = 'MY_TICKETS',
+  TICKETS = 'TICKETS',
   ADMIN = 'ADMIN',
+  MEGA_EVENT = 'MEGA_EVENT',
 }
 
 // ── Interfaces ───────────────────────────────────────
@@ -27,6 +27,8 @@ export interface EventItem {
   category: 'Hackathon' | 'Tech Competition' | 'Sports Event' | 'Cultural Fest' | 'Music Concert' | 'Workshop' | 'Conference' | 'Meetup' | 'Webinar' | 'Social' | 'Other';
   department: 'CSE' | 'ECE' | 'Mechanical' | 'Arts' | 'Sports' | 'Management' | 'Science' | 'General';
   image_url?: string;
+  is_team_event?: boolean;
+  max_team_size?: number;
   organizer_id: number;
   created_at?: string;
   updated_at?: string;
@@ -39,6 +41,7 @@ export interface Registration {
   id: number;
   user_id: number;
   event_id: number;
+  team_name?: string;
   created_at?: string;
   name?: string;
   email?: string;

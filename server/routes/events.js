@@ -64,7 +64,7 @@ router.get('/', authenticate, async (req, res) => {
 // POST /api/events — create event (admin only)
 router.post('/', authenticate, requireAdmin, async (req, res) => {
     try {
-        const { title, description, date, time, location, capacity, category, department, imageUrl } = req.body;
+        const { title, description, date, time, location, capacity, category, department, imageUrl, is_team_event, max_team_size } = req.body;
 
         if (!title || !description || !date || !time || !location || !capacity) {
             return res.status(400).json({ message: 'Title, description, date, time, location, and capacity are required.' });
@@ -72,9 +72,9 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
 
         const pool = getDB();
         const [result] = await pool.query(
-            `INSERT INTO events (title, description, date, time, location, capacity, category, department, image_url, organizer_id)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [title, description, date, time, location, capacity, category || 'Other', department || 'General', imageUrl || '', req.user.id]
+            `INSERT INTO events (title, description, date, time, location, capacity, category, department, image_url, is_team_event, max_team_size, created_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [title, description, date, time, location, capacity, category || 'Other', department || 'General', imageUrl || '', is_team_event || false, max_team_size || 1, req.user.id]
         );
 
         const [rows] = await pool.query('SELECT * FROM events WHERE id = ?', [result.insertId]);
@@ -99,19 +99,22 @@ router.put('/:id', authenticate, async (req, res) => {
         }
 
         const event = rows[0];
-        if (event.organizer_id !== req.user.id && !req.user.isAdmin) {
+        if (event.created_by !== req.user.id && !req.user.isAdmin) {
             return res.status(403).json({ message: 'You can only edit your own events.' });
         }
 
-        const { title, description, date, time, location, capacity, category, department, imageUrl } = req.body;
+        const { title, description, date, time, location, capacity, category, department, imageUrl, is_team_event, max_team_size } = req.body;
 
         await pool.query(
             `UPDATE events SET title = COALESCE(?, title), description = COALESCE(?, description),
              date = COALESCE(?, date), time = COALESCE(?, time), location = COALESCE(?, location),
              capacity = COALESCE(?, capacity), category = COALESCE(?, category),
              department = COALESCE(?, department),
-             image_url = COALESCE(?, image_url) WHERE id = ?`,
-            [title, description, date, time, location, capacity, category, department, imageUrl, req.params.id]
+             image_url = COALESCE(?, image_url),
+             is_team_event = COALESCE(?, is_team_event),
+             max_team_size = COALESCE(?, max_team_size)
+             WHERE id = ?`,
+            [title, description, date, time, location, capacity, category, department, imageUrl, is_team_event, max_team_size, req.params.id]
         );
 
         const [updated] = await pool.query('SELECT * FROM events WHERE id = ?', [req.params.id]);
@@ -136,7 +139,7 @@ router.delete('/:id', authenticate, async (req, res) => {
         }
 
         const event = rows[0];
-        if (event.organizer_id !== req.user.id && !req.user.isAdmin) {
+        if (event.created_by !== req.user.id && !req.user.isAdmin) {
             return res.status(403).json({ message: 'You can only delete your own events.' });
         }
 

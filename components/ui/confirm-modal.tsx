@@ -6,7 +6,9 @@ interface ConfirmModalProps {
     open: boolean;
     type: "join" | "leave";
     eventTitle?: string;
-    onConfirm: () => void;
+    isTeamEvent?: boolean;
+    maxTeamSize?: number;
+    onConfirm: (teamName?: string) => void;
     onCancel: () => void;
 }
 
@@ -14,12 +16,27 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
     open,
     type,
     eventTitle,
+    isTeamEvent,
+    maxTeamSize,
     onConfirm,
     onCancel,
 }) => {
+    const [teamName, setTeamName] = React.useState('');
+    const [error, setError] = React.useState('');
+
     if (!open) return null;
 
     const isJoin = type === "join";
+
+    const handleConfirm = () => {
+        if (isJoin && isTeamEvent) {
+            if (!teamName.trim()) {
+                setError('A team name is required');
+                return;
+            }
+        }
+        onConfirm(isTeamEvent ? teamName.trim() : undefined);
+    };
 
     return (
         <div
@@ -77,16 +94,37 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
                 {/* Subtitle */}
                 <p
-                    className="text-center text-sm mb-6"
+                    className="text-center text-sm mb-4"
                     style={{ color: "#94A3B8" }}
                 >
                     {isJoin
-                        ? `You're about to register${eventTitle ? ` for "${eventTitle}"` : ""}. A spot will be reserved for you.`
+                        ? (isTeamEvent
+                            ? `This is a Team Event (Max ${maxTeamSize} members)! Enter a team name below to register your group, or join an existing team.`
+                            : `You're about to register${eventTitle ? ` for "${eventTitle}"` : ""}. A spot will be reserved for you.`)
                         : `You're about to leave${eventTitle ? ` "${eventTitle}"` : " this event"}. Your spot will be released.`}
                 </p>
 
+                {isJoin && isTeamEvent && (
+                    <div className="mb-6">
+                        <input
+                            type="text"
+                            placeholder="Enter Team Name..."
+                            value={teamName}
+                            onChange={(e) => {
+                                setTeamName(e.target.value);
+                                setError('');
+                            }}
+                            className={cn(
+                                "w-full rounded-xl border bg-black/20 px-4 py-3 text-sm text-white outline-none transition-all focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 placeholder:text-white/30",
+                                error ? "border-red-500/50 ring-red-500/20" : "border-white/10 hover:border-white/20"
+                            )}
+                        />
+                        {error && <p className="text-red-400 text-xs mt-2 pl-1 animate-in slide-in-from-top-1">{error}</p>}
+                    </div>
+                )}
+
                 {/* Actions */}
-                <div className="flex gap-3">
+                <div className="flex gap-3 mt-2">
                     <button
                         onClick={onCancel}
                         className="flex-1 rounded-xl py-2.5 text-sm font-medium transition-all duration-200 hover:scale-[1.02]"
@@ -107,7 +145,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                         Cancel
                     </button>
                     <button
-                        onClick={onConfirm}
+                        onClick={handleConfirm}
                         className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02]"
                         style={{
                             background: isJoin

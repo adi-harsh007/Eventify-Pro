@@ -15,7 +15,10 @@ interface EventCardProps extends React.HTMLAttributes<HTMLDivElement> {
     date: string;
     isRegistered: boolean;
     isSoldOut?: boolean;
-    onToggleRegistration: () => void;
+    isTeamEvent?: boolean;
+    maxTeamSize?: number;
+    onToggleRegistration: (teamName?: string) => void;
+    onClick?: () => void;
 }
 
 const EventCard = React.forwardRef<HTMLDivElement, EventCardProps>(
@@ -30,7 +33,10 @@ const EventCard = React.forwardRef<HTMLDivElement, EventCardProps>(
             date,
             isRegistered,
             isSoldOut = false,
+            isTeamEvent,
+            maxTeamSize,
             onToggleRegistration,
+            onClick,
             ...props
         },
         ref
@@ -41,9 +47,11 @@ const EventCard = React.forwardRef<HTMLDivElement, EventCardProps>(
             <>
                 <div
                     ref={ref}
+                    onClick={onClick}
                     className={cn(
                         "group relative w-full max-w-sm overflow-hidden rounded-[20px] border border-[rgba(255,255,255,0.08)] bg-[#161E2E] shadow-lg",
                         "transition-all duration-300 ease-in-out hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] hover:-translate-y-1",
+                        onClick && "cursor-pointer",
                         className
                     )}
                     {...props}
@@ -117,9 +125,11 @@ const EventCard = React.forwardRef<HTMLDivElement, EventCardProps>(
                         open={showConfirm}
                         type={isRegistered ? "leave" : "join"}
                         eventTitle={title}
-                        onConfirm={() => {
+                        isTeamEvent={isTeamEvent}
+                        maxTeamSize={maxTeamSize}
+                        onConfirm={(teamName) => {
                             setShowConfirm(false);
-                            onToggleRegistration();
+                            onToggleRegistration(teamName);
                         }}
                         onCancel={() => setShowConfirm(false)}
                     />,

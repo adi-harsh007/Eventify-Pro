@@ -3,13 +3,15 @@ import { EventItem, Registration, User } from '../types';
 import { Search, SlidersHorizontal, Plus, Ticket, ChevronRight, ChevronDown } from 'lucide-react';
 import { EventCard } from './ui/event-card';
 import { ParticleTextEffect } from './ui/particle-text-effect';
+import { CalendarView } from './ui/calendar-view';
+import { EventDetailsModal } from './ui/event-details-modal';
 import { cn } from '../lib/utils';
 
 interface UserDashboardProps {
   events: EventItem[];
   registrations: Registration[];
   currentUser: User | null;
-  onJoinEvent: (eventId: number) => void;
+  onJoinEvent: (eventId: number, teamName?: string) => void;
   onLeaveEvent: (eventId: number) => void;
   viewMode: 'explore' | 'tickets';
   onCreateEvent?: () => void;
@@ -69,6 +71,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDept, setSelectedDept] = useState<'All' | Department>('All');
+  const [selectedEventDetails, setSelectedEventDetails] = useState<EventItem | null>(null);
   const mainSectionRef = useRef<HTMLDivElement>(null);
 
   const myRegEventIds = new Set(
@@ -96,8 +99,6 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
   const isFiltering = searchTerm.trim() !== '' || selectedDept !== 'All';
   const firstName = currentUser?.name?.split(' ')[0] || 'there';
 
-  const scrollToMain = () => mainSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
-
   // ── My Tickets view (no hero) ──
   if (viewMode === 'tickets') {
     return (
@@ -115,8 +116,21 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
             onJoinEvent={onJoinEvent}
             onLeaveEvent={onLeaveEvent}
             firstName={firstName}
+            onEventClick={setSelectedEventDetails}
           />
         </div>
+        <EventDetailsModal
+          event={selectedEventDetails!}
+          isOpen={!!selectedEventDetails}
+          onClose={() => setSelectedEventDetails(null)}
+          isRegistered={selectedEventDetails ? myRegEventIds.has(selectedEventDetails.id) : false}
+          onToggleRegistration={(teamName) => {
+            if (!selectedEventDetails) return;
+            if (myRegEventIds.has(selectedEventDetails.id)) onLeaveEvent(selectedEventDetails.id);
+            else onJoinEvent(selectedEventDetails.id, teamName);
+          }}
+          isAdmin={currentUser?.isAdmin}
+        />
       </div>
     );
   }
@@ -125,32 +139,21 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
   return (
     <div className="relative w-full" style={{
       backgroundColor: '#0B0F19',
-      scrollSnapType: 'y mandatory',
-      overflowY: 'scroll',
+      overflowY: 'auto',
       height: 'calc(100vh - 64px)',
     }}>
 
       {/* ════ SECTION 1 — Hero ════ */}
-      <section className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden"
-        style={{ scrollSnapAlign: 'start', backgroundColor: '#0B0F19' }}>
+      <section className="relative flex w-full flex-col items-center overflow-hidden pt-12 pb-6 border-b border-white/5"
+        style={{ backgroundColor: '#0B0F19' }}>
         <div aria-hidden className="pointer-events-none absolute inset-0" style={{
           background: 'radial-gradient(ellipse 80% 50% at 50% 40%, rgba(59,130,246,0.07) 0%, transparent 60%)',
         }} />
 
-        {/* Particle canvas */}
-        <div className="relative w-full" style={{ height: '220px' }}>
-          <ParticleTextEffect text="Eventify Pro" fontSize={96} color="#3B82F6" glowColor="#6366F1" />
-        </div>
-
-        {/* Welcome greeting */}
-        <div className="relative z-10 mt-6 flex flex-col items-center gap-4 text-center px-6">
-          <h1 className="font-bold leading-tight tracking-tight" style={{
-            fontSize: 'clamp(32px, 4vw, 52px)',
-            background: 'linear-gradient(135deg, #FFFFFF 0%, rgba(255,255,255,0.45) 100%)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-          }}>
-            Welcome back, {firstName}
-          </h1>
+        <div className="relative z-10 flex flex-col items-center gap-4 text-center px-4 w-full">
+          <div className="relative w-full h-[160px]">
+            <ParticleTextEffect text={`Welcome back, ${firstName}`} fontSize={72} color="#FFFFFF" glowColor="#6366F1" />
+          </div>
           <p style={{ color: '#94A3B8', fontSize: '16px' }}>
             Explore what's happening across your campus.
           </p>
@@ -175,30 +178,13 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
           </div>
         </div>
 
-        {/* Scroll indicator */}
-        <button onClick={scrollToMain} aria-label="Scroll to events"
-          className="absolute bottom-10 flex flex-col items-center gap-2 hover:opacity-100 transition-opacity"
-          style={{ opacity: 0.6 }}>
-          <span className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: '#94A3B8' }}>
-            Scroll to Explore
-          </span>
-          <div className="flex h-8 w-5 items-start justify-center rounded-full border-2 pt-1.5"
-            style={{ borderColor: '#94A3B8' }}>
-            <div className="h-2 w-1 rounded-full" style={{
-              backgroundColor: '#3B82F6',
-              animation: 'scrollDot 1.6s ease-in-out infinite',
-            }} />
-          </div>
-          <ChevronDown size={16} style={{ color: '#94A3B8' }} className="animate-bounce" />
-        </button>
-        <style>{`@keyframes scrollDot{0%{transform:translateY(0);opacity:1}100%{transform:translateY(10px);opacity:0}}`}</style>
       </section>
 
       {/* ════ SECTION 2 — Departments ════ */}
       <section ref={mainSectionRef} className="relative w-full"
-        style={{ scrollSnapAlign: 'start', backgroundColor: '#0B0F19', minHeight: '100vh' }}>
+        style={{ backgroundColor: '#0B0F19', minHeight: '100vh' }}>
 
-        <div className="relative z-10 mx-auto max-w-7xl px-6 py-12">
+        <div className="relative z-10 mx-auto max-w-7xl px-6 py-8">
 
           {/* ── Search + Create ── */}
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -325,7 +311,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
                   <span className="text-xs font-medium" style={{ color: '#94A3B8' }}>{filtered.length} results</span>
                   <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.04)' }} />
                 </div>
-                <EventGrid events={filtered} myRegEventIds={myRegEventIds} onJoinEvent={onJoinEvent} onLeaveEvent={onLeaveEvent} />
+                <EventGrid events={filtered} myRegEventIds={myRegEventIds} onJoinEvent={onJoinEvent} onLeaveEvent={onLeaveEvent} onEventClick={setSelectedEventDetails} />
               </>
           ) : events.length === 0
             ? <EmptyState onClear={undefined} />
@@ -339,12 +325,25 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
                     myRegEventIds={myRegEventIds}
                     onJoinEvent={onJoinEvent}
                     onLeaveEvent={onLeaveEvent}
+                    onEventClick={setSelectedEventDetails}
                   />
                 ))}
               </div>
             )
           }
         </div>
+        <EventDetailsModal
+          event={selectedEventDetails!}
+          isOpen={!!selectedEventDetails}
+          onClose={() => setSelectedEventDetails(null)}
+          isRegistered={selectedEventDetails ? myRegEventIds.has(selectedEventDetails.id) : false}
+          onToggleRegistration={(teamName) => {
+            if (!selectedEventDetails) return;
+            if (myRegEventIds.has(selectedEventDetails.id)) onLeaveEvent(selectedEventDetails.id);
+            else onJoinEvent(selectedEventDetails.id, teamName);
+          }}
+          isAdmin={currentUser?.isAdmin}
+        />
       </section>
     </div>
   );
@@ -355,9 +354,10 @@ const DeptRow: React.FC<{
   dept: Department;
   events: EventItem[];
   myRegEventIds: Set<number>;
-  onJoinEvent: (id: number) => void;
+  onJoinEvent: (id: number, teamName?: string) => void;
   onLeaveEvent: (id: number) => void;
-}> = ({ dept, events, myRegEventIds, onJoinEvent, onLeaveEvent }) => {
+  onEventClick: (event: EventItem) => void;
+}> = ({ dept, events, myRegEventIds, onJoinEvent, onLeaveEvent, onEventClick }) => {
   const rowRef = useRef<HTMLDivElement>(null);
   const meta = DEPT_META[dept];
 
@@ -414,7 +414,10 @@ const DeptRow: React.FC<{
                 date={formatEventDateTime(event.date, event.time)}
                 isRegistered={isJoined}
                 isSoldOut={isFull && !isJoined}
-                onToggleRegistration={() => isJoined ? onLeaveEvent(event.id) : onJoinEvent(event.id)}
+                isTeamEvent={event.is_team_event}
+                maxTeamSize={event.max_team_size}
+                onToggleRegistration={(teamName) => isJoined ? onLeaveEvent(event.id) : onJoinEvent(event.id, teamName)}
+                onClick={() => onEventClick(event)}
                 className="h-[400px]"
                 style={{ transition: 'transform 250ms ease-out' }}
               />
@@ -430,9 +433,10 @@ const DeptRow: React.FC<{
 const EventGrid: React.FC<{
   events: EventItem[];
   myRegEventIds: Set<number>;
-  onJoinEvent: (id: number) => void;
+  onJoinEvent: (id: number, teamName?: string) => void;
   onLeaveEvent: (id: number) => void;
-}> = ({ events, myRegEventIds, onJoinEvent, onLeaveEvent }) => (
+  onEventClick: (event: EventItem) => void;
+}> = ({ events, myRegEventIds, onJoinEvent, onLeaveEvent, onEventClick }) => (
   <div className="grid pb-16"
     style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))', gap: '24px' }}>
     {events.map(event => {
@@ -449,7 +453,10 @@ const EventGrid: React.FC<{
           date={formatEventDateTime(event.date, event.time)}
           isRegistered={isJoined}
           isSoldOut={isFull && !isJoined}
-          onToggleRegistration={() => isJoined ? onLeaveEvent(event.id) : onJoinEvent(event.id)}
+          isTeamEvent={event.is_team_event}
+          maxTeamSize={event.max_team_size}
+          onToggleRegistration={(teamName) => isJoined ? onLeaveEvent(event.id) : onJoinEvent(event.id, teamName)}
+          onClick={() => onEventClick(event)}
           className="h-[420px]"
         />
       );
@@ -465,116 +472,149 @@ const TicketsContent: React.FC<{
   setSearchTerm: (v: string) => void;
   selectedDept: 'All' | Department;
   setSelectedDept: (v: 'All' | Department) => void;
-  onJoinEvent: (id: number) => void;
+  onJoinEvent: (id: number, teamName?: string) => void;
   onLeaveEvent: (id: number) => void;
   firstName: string;
-}> = ({ displayedEvents, myRegEventIds, searchTerm, setSearchTerm, selectedDept, setSelectedDept, onJoinEvent, onLeaveEvent, firstName }) => (
-  <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-    <div className="space-y-1">
-      <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#3B82F6' }}>✦ Your Collection</p>
-      <h2 className="font-bold tracking-tight" style={{
-        fontSize: 'clamp(32px, 4vw, 48px)',
-        background: 'linear-gradient(135deg, #FFFFFF 0%, rgba(255,255,255,0.45) 100%)',
-        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-      }}>My Tickets</h2>
-      <p style={{ color: '#94A3B8', fontSize: '15px' }}>
-        {myRegEventIds.size > 0 ? `${myRegEventIds.size} upcoming event${myRegEventIds.size !== 1 ? 's' : ''}` : 'Your booked experiences will appear here.'}
-      </p>
-    </div>
+  onEventClick: (event: EventItem) => void;
+}> = ({ displayedEvents, myRegEventIds, searchTerm, setSearchTerm, selectedDept, setSelectedDept, onJoinEvent, onLeaveEvent, firstName, onEventClick }) => {
+  const [showCalendar, setShowCalendar] = React.useState(false);
 
-    {/* Search */}
-    <div className="group relative w-full sm:w-80">
-      <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: '#94A3B8' }} />
-      <input type="text" placeholder="Search your tickets..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-        className="w-full rounded-2xl py-3 pl-10 pr-4 text-sm text-white outline-none transition-all"
-        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(12px)' }}
-        onFocus={e => { e.currentTarget.style.border = '1px solid rgba(59,130,246,0.5)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'; }}
-        onBlur={e => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.08)'; e.currentTarget.style.boxShadow = 'none'; }}
-      />
-    </div>
+  return (
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+        <div className="space-y-1">
+          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#3B82F6' }}>✦ Your Collection</p>
+          <h2 className="font-bold tracking-tight" style={{
+            fontSize: 'clamp(32px, 4vw, 48px)',
+            background: 'linear-gradient(135deg, #FFFFFF 0%, rgba(255,255,255,0.45) 100%)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+          }}>My Tickets</h2>
+          <p style={{ color: '#94A3B8', fontSize: '15px' }}>
+            {myRegEventIds.size > 0 ? `${myRegEventIds.size} upcoming event${myRegEventIds.size !== 1 ? 's' : ''}` : 'Your booked experiences will appear here.'}
+          </p>
+        </div>
 
-    {/* Dept filter */}
-    <div className="flex items-center gap-3 overflow-x-auto rounded-2xl px-4 py-3"
-      style={{ background: 'rgba(17,24,39,0.6)', border: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(8px)', scrollbarWidth: 'none' }}>
-      <div className="flex shrink-0 items-center gap-2" style={{ color: '#94A3B8' }}>
-        <SlidersHorizontal size={13} />
-        <span className="text-xs font-medium whitespace-nowrap">Department</span>
+        <button
+          onClick={() => setShowCalendar(!showCalendar)}
+          className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all duration-300 active:scale-[0.97] hover:scale-105 hover:shadow-[0_0_20px_rgba(99,102,241,0.4)]"
+          style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', boxShadow: '0 0 15px rgba(99,102,241,0.2)', border: '1px solid rgba(255,255,255,0.1)' }}
+        >
+          {showCalendar ? (
+            <>
+              <Ticket size={16} /> View as List
+            </>
+          ) : (
+            <>
+              <span className="text-base">📅</span> View Calendar
+            </>
+          )}
+        </button>
       </div>
-      <div className="h-4 w-px shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />
-      <button
-        onClick={() => setSelectedDept('All')}
-        style={{ '--gradient-from': '#3B82F6', '--gradient-to': '#6366F1' } as React.CSSProperties}
-        className={cn(
-          "relative h-[48px] shadow-lg rounded-full flex shrink-0 items-center justify-center transition-all duration-500 hover:shadow-none group cursor-pointer",
-          selectedDept === 'All' ? "w-[120px] bg-transparent" : "w-[48px] bg-[#1a1f2e] hover:w-[120px]"
-        )}
-      >
-        <span className={cn(
-          "absolute inset-0 rounded-full bg-[linear-gradient(45deg,var(--gradient-from),var(--gradient-to))] transition-all duration-500",
-          selectedDept === 'All' ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-        )}></span>
-        <span className={cn(
-          "absolute top-[8px] inset-x-0 h-full rounded-full bg-[linear-gradient(45deg,var(--gradient-from),var(--gradient-to))] blur-[12px] -z-10 transition-all duration-500",
-          selectedDept === 'All' ? "opacity-40" : "opacity-0 group-hover:opacity-40"
-        )}></span>
-        <span className={cn(
-          "relative z-10 transition-all duration-500 absolute font-bold",
-          selectedDept === 'All' ? "scale-0 opacity-0" : "scale-100 opacity-100 group-hover:scale-0 group-hover:opacity-0 text-[#94A3B8]"
-        )}>
-          All
-        </span>
-        <span className={cn(
-          "absolute text-white uppercase tracking-wide font-bold text-sm transition-all duration-500",
-          selectedDept === 'All' ? "scale-100" : "scale-0 group-hover:scale-100"
-        )}>
-          All
-        </span>
-      </button>
-      {DEPARTMENTS.map(dept => {
-        const meta = DEPT_META[dept];
-        const active = selectedDept === dept;
-        return (
-          <button
-            key={dept}
-            onClick={() => setSelectedDept(dept)}
-            title={dept}
-            style={{ '--gradient-from': meta.gradientFrom, '--gradient-to': meta.gradientTo } as React.CSSProperties}
-            className={cn(
-              "relative h-[48px] shadow-lg rounded-full flex shrink-0 items-center justify-center transition-all duration-500 hover:shadow-none group cursor-pointer",
-              active ? "w-[160px] bg-transparent" : "w-[48px] bg-[#1a1f2e] hover:w-[160px]"
-            )}
-          >
-            <span className={cn(
-              "absolute inset-0 rounded-full bg-[linear-gradient(45deg,var(--gradient-from),var(--gradient-to))] transition-all duration-500",
-              active ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-            )}></span>
-            <span className={cn(
-              "absolute top-[8px] inset-x-0 h-full rounded-full bg-[linear-gradient(45deg,var(--gradient-from),var(--gradient-to))] blur-[12px] -z-10 transition-all duration-500",
-              active ? "opacity-40" : "opacity-0 group-hover:opacity-40"
-            )}></span>
-            <span className={cn(
-              "relative z-10 transition-all duration-500 absolute flex items-center justify-center text-[20px]",
-              active ? "scale-0 opacity-0" : "scale-100 opacity-100 group-hover:scale-0 group-hover:opacity-0 text-[#94A3B8]"
-            )}>
-              {meta.icon}
-            </span>
-            <span className={cn(
-              "absolute text-white uppercase tracking-wide font-bold text-[11px] whitespace-nowrap px-4 transition-all duration-500",
-              active ? "scale-100" : "scale-0 group-hover:scale-100"
-            )}>
-              {dept}
-            </span>
-          </button>
-        );
-      })}
-    </div>
 
-    {displayedEvents.length === 0
-      ? <EmptyState onClear={(searchTerm || selectedDept !== 'All') ? () => { setSearchTerm(''); setSelectedDept('All'); } : undefined} isTickets />
-      : <EventGrid events={displayedEvents} myRegEventIds={myRegEventIds} onJoinEvent={onJoinEvent} onLeaveEvent={onLeaveEvent} />
-    }
-  </div>
-);
+      {/* Search */}
+      <div className="group relative w-full sm:w-80">
+        <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: '#94A3B8' }} />
+        <input type="text" placeholder="Search your tickets..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+          className="w-full rounded-2xl py-3 pl-10 pr-4 text-sm text-white outline-none transition-all"
+          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(12px)' }}
+          onFocus={e => { e.currentTarget.style.border = '1px solid rgba(59,130,246,0.5)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'; }}
+          onBlur={e => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.08)'; e.currentTarget.style.boxShadow = 'none'; }}
+        />
+      </div>
+
+      {/* Dept filter */}
+      <div className="flex items-center gap-3 overflow-x-auto rounded-2xl px-4 py-3"
+        style={{ background: 'rgba(17,24,39,0.6)', border: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(8px)', scrollbarWidth: 'none' }}>
+        <div className="flex shrink-0 items-center gap-2" style={{ color: '#94A3B8' }}>
+          <SlidersHorizontal size={13} />
+          <span className="text-xs font-medium whitespace-nowrap">Department</span>
+        </div>
+        <div className="h-4 w-px shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />
+        <button
+          onClick={() => setSelectedDept('All')}
+          style={{ '--gradient-from': '#3B82F6', '--gradient-to': '#6366F1' } as React.CSSProperties}
+          className={cn(
+            "relative h-[48px] shadow-lg rounded-full flex shrink-0 items-center justify-center transition-all duration-500 hover:shadow-none group cursor-pointer",
+            selectedDept === 'All' ? "w-[120px] bg-transparent" : "w-[48px] bg-[#1a1f2e] hover:w-[120px]"
+          )}
+        >
+          <span className={cn(
+            "absolute inset-0 rounded-full bg-[linear-gradient(45deg,var(--gradient-from),var(--gradient-to))] transition-all duration-500",
+            selectedDept === 'All' ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          )}></span>
+          <span className={cn(
+            "absolute top-[8px] inset-x-0 h-full rounded-full bg-[linear-gradient(45deg,var(--gradient-from),var(--gradient-to))] blur-[12px] -z-10 transition-all duration-500",
+            selectedDept === 'All' ? "opacity-40" : "opacity-0 group-hover:opacity-40"
+          )}></span>
+          <span className={cn(
+            "relative z-10 transition-all duration-500 absolute font-bold",
+            selectedDept === 'All' ? "scale-0 opacity-0" : "scale-100 opacity-100 group-hover:scale-0 group-hover:opacity-0 text-[#94A3B8]"
+          )}>
+            All
+          </span>
+          <span className={cn(
+            "absolute text-white uppercase tracking-wide font-bold text-sm transition-all duration-500",
+            selectedDept === 'All' ? "scale-100" : "scale-0 group-hover:scale-100"
+          )}>
+            All
+          </span>
+        </button>
+        {DEPARTMENTS.map(dept => {
+          const meta = DEPT_META[dept];
+          const active = selectedDept === dept;
+          return (
+            <button
+              key={dept}
+              onClick={() => setSelectedDept(dept)}
+              title={dept}
+              style={{ '--gradient-from': meta.gradientFrom, '--gradient-to': meta.gradientTo } as React.CSSProperties}
+              className={cn(
+                "relative h-[48px] shadow-lg rounded-full flex shrink-0 items-center justify-center transition-all duration-500 hover:shadow-none group cursor-pointer",
+                active ? "w-[160px] bg-transparent" : "w-[48px] bg-[#1a1f2e] hover:w-[160px]"
+              )}
+            >
+              <span className={cn(
+                "absolute inset-0 rounded-full bg-[linear-gradient(45deg,var(--gradient-from),var(--gradient-to))] transition-all duration-500",
+                active ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+              )}></span>
+              <span className={cn(
+                "absolute top-[8px] inset-x-0 h-full rounded-full bg-[linear-gradient(45deg,var(--gradient-from),var(--gradient-to))] blur-[12px] -z-10 transition-all duration-500",
+                active ? "opacity-40" : "opacity-0 group-hover:opacity-40"
+              )}></span>
+              <span className={cn(
+                "relative z-10 transition-all duration-500 absolute flex items-center justify-center text-[20px]",
+                active ? "scale-0 opacity-0" : "scale-100 opacity-100 group-hover:scale-0 group-hover:opacity-0 text-[#94A3B8]"
+              )}>
+                {meta.icon}
+              </span>
+              <span className={cn(
+                "absolute text-white uppercase tracking-wide font-bold text-[11px] whitespace-nowrap px-4 transition-all duration-500",
+                active ? "scale-100" : "scale-0 group-hover:scale-100"
+              )}>
+                {dept}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {showCalendar ? (
+        <div className="pt-2">
+          <CalendarView
+            events={displayedEvents.filter(e => myRegEventIds.has(e.id))}
+          />
+        </div>
+      ) : (
+        <>
+          {displayedEvents.length === 0
+            ? <EmptyState onClear={(searchTerm || selectedDept !== 'All') ? () => { setSearchTerm(''); setSelectedDept('All'); } : undefined} isTickets />
+            : <EventGrid events={displayedEvents} myRegEventIds={myRegEventIds} onJoinEvent={onJoinEvent} onLeaveEvent={onLeaveEvent} onEventClick={onEventClick} />
+          }
+        </>
+      )}
+    </div>
+  );
+}
 
 // ── Empty State ──────────────────────────────────────────
 const EmptyState: React.FC<{ onClear?: () => void; isTickets?: boolean }> = ({ onClear, isTickets }) => (

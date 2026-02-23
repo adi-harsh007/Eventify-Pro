@@ -15,7 +15,7 @@ router.get('/events', async (req, res) => {
         const pool = getDB();
         const [rows] = await pool.query(
             `SELECT e.*, u.name AS creator_name, u.email AS creator_email
-             FROM events e LEFT JOIN users u ON e.organizer_id = u.id
+             FROM events e LEFT JOIN users u ON e.created_by = u.id
              ORDER BY e.created_at DESC`
         );
         res.json(rows);

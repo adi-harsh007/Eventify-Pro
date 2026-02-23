@@ -139,6 +139,34 @@ export const apiDeleteEvent = async (id: number) => {
     return handleResponse(res);
 };
 
+// ── Mega Events ──────────────────────────────────────
+export const apiGetMegaEventStatus = async () => {
+    const res = await fetch(`${API_URL}/mega-events/status`, { headers: authHeaders() });
+    return handleResponse(res);
+};
+
+export const apiJoinMegaEvent = async () => {
+    const res = await fetch(`${API_URL}/mega-events/register`, {
+        method: 'POST',
+        headers: authHeaders(),
+    });
+    return handleResponse(res);
+};
+
+export const apiGetMegaEventLineup = async () => {
+    const res = await fetch(`${API_URL}/mega-events/lineup`, { headers: authHeaders() });
+    return handleResponse(res);
+};
+
+export const apiAdminUpdateMegaEventLineup = async (id: number, lineUpData: Record<string, unknown>) => {
+    const res = await fetch(`${API_URL}/mega-events/admin/lineup/${id}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify(lineUpData),
+    });
+    return handleResponse(res);
+};
+
 // ── Registrations ────────────────────────────────────
 export const apiGetRegistrations = async () => {
     const res = await fetch(`${API_URL}/registrations`, { headers: authHeaders() });
@@ -155,11 +183,11 @@ export const apiGetAllUsers = async () => {
     return handleResponse(res);
 };
 
-export const apiJoinEvent = async (eventId: number) => {
+export const apiJoinEvent = async (eventId: number, teamName?: string) => {
     const res = await fetch(`${API_URL}/registrations`, {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ eventId }),
+        body: JSON.stringify({ eventId, teamName }),
     });
     return handleResponse(res);
 };
@@ -221,5 +249,37 @@ export const apiAdminRemoveRegistration = async (regId: number) => {
 
 export const apiAdminGetUsers = async () => {
     const res = await fetch(`${API_URL}/admin/users`, { headers: authHeaders() });
+    return handleResponse(res);
+};
+
+// ── Admin Todos ──────────────────────────────────────
+export const apiAdminGetTodos = async () => {
+    const res = await fetch(`${API_URL}/admin-todos`, { headers: authHeaders() });
+    return handleResponse(res);
+};
+
+export const apiAdminCreateTodo = async (text: string) => {
+    const res = await fetch(`${API_URL}/admin-todos`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ text }),
+    });
+    return handleResponse(res);
+};
+
+export const apiAdminUpdateTodo = async (id: number, completed: boolean) => {
+    const res = await fetch(`${API_URL}/admin-todos/${id}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({ completed }),
+    });
+    return handleResponse(res);
+};
+
+export const apiAdminDeleteTodo = async (id: number) => {
+    const res = await fetch(`${API_URL}/admin-todos/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+    });
     return handleResponse(res);
 };

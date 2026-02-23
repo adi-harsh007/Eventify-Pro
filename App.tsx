@@ -7,13 +7,22 @@ import LandingHero from './components/LandingHero';
 import Navbar from './components/Navbar';
 import UserDashboard from './components/UserDashboard';
 import AdminDashboard from './components/AdminDashboard';
+import MegaEventPage from './components/MegaEventPage';
 import CreateEventModal from './components/CreateEventModal';
 import { cn } from './lib/utils';
 
 function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<ViewState>(ViewState.EXPLORE);
+  const [currentView, setCurrentView] = useState<ViewState>(() => {
+    const saved = localStorage.getItem('currentView');
+    return saved ? (saved as ViewState) : ViewState.EXPLORE;
+  });
+
+  // Persist view state on change
+  useEffect(() => {
+    localStorage.setItem('currentView', currentView);
+  }, [currentView]);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,9 +89,9 @@ function App() {
   }, [token, currentUser, fetchEvents, fetchRegistrations]);
 
   // ── Event actions ────────────────────────────────
-  const handleJoinEvent = async (eventId: number) => {
+  const handleJoinEvent = async (eventId: number, teamName?: string) => {
     try {
-      await apiJoinEvent(eventId);
+      await apiJoinEvent(eventId, teamName);
       await fetchEvents();
       await fetchRegistrations();
     } catch (err: any) {
@@ -129,12 +138,10 @@ function App() {
   }
 
   // ── Main App Layout ─────────────────────────────────────
-  const MainApp = () => {
-    const myRegisteredEventIds = new Set(registrations.map(r => r.event_id));
-
+  // ── Main App Layout ──
+  const renderMainApp = () => {
     return (
       <div className="relative min-h-screen bg-background text-foreground font-sans antialiased">
-        {/* Ambient radial glow — matches landing page atmosphere */}
         <div
           aria-hidden="true"
           className="pointer-events-none fixed inset-0 z-0"
@@ -158,16 +165,8 @@ function App() {
         )}>
           {currentView === ViewState.ADMIN && currentUser?.isAdmin ? (
             <AdminDashboard currentUser={currentUser} onEditEvent={handleEditEvent} />
-          ) : currentView === ViewState.MY_TICKETS ? (
-            <UserDashboard
-              events={events.filter(e => myRegisteredEventIds.has(e.id))}
-              registrations={registrations}
-              currentUser={currentUser!}
-              onLeaveEvent={handleLeaveEvent}
-              onJoinEvent={handleJoinEvent}
-              viewMode="tickets"
-              onCreateEvent={currentUser?.isAdmin ? () => { setEditingEvent(null); setShowCreateModal(true); } : undefined}
-            />
+          ) : currentView === ViewState.MEGA_EVENT ? (
+            <MegaEventPage user={currentUser!} />
           ) : (
             <UserDashboard
               events={events}
@@ -175,7 +174,7 @@ function App() {
               currentUser={currentUser!}
               onJoinEvent={handleJoinEvent}
               onLeaveEvent={handleLeaveEvent}
-              viewMode="explore"
+              viewMode={currentView === ViewState.TICKETS ? 'tickets' : 'explore'}
               onCreateEvent={currentUser?.isAdmin ? () => { setEditingEvent(null); setShowCreateModal(true); } : undefined}
             />
           )}
@@ -201,7 +200,7 @@ function App() {
         !currentUser ? (
           <LandingHero onGetStarted={() => navigate('/login')} />
         ) : (
-          <MainApp />
+          renderMainApp()
         )
       } />
       <Route path="*" element={<Navigate to="/" replace />} />

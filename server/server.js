@@ -22,6 +22,8 @@ const eventRoutes = require('./routes/events');
 const registrationRoutes = require('./routes/registrations');
 const discoveryRoutes = require('./routes/discovery');
 const adminRoutes = require('./routes/admin');
+const megaEventsRoutes = require('./routes/mega-events');
+const adminTodosRoutes = require('./routes/admin-todos');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -135,7 +137,10 @@ app.use('/api/events', eventRoutes);
 app.use('/api/registrations', registrationRoutes);
 app.use('/api/discovery', discoveryRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/mega-events', megaEventsRoutes);
+app.use('/api/admin-todos', adminTodosRoutes);
 
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // ── Health check (#9: minimal public response) ────────────────────
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });

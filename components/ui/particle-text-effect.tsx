@@ -50,7 +50,15 @@ const ParticleTextEffect: React.FC<ParticleTextEffectProps> = ({
             const oc = offscreen.getContext('2d')!;
 
             oc.fillStyle = '#ffffff';
-            oc.font = `bold ${responsiveFontSize}px Inter, system-ui, sans-serif`;
+            let finalFontSize = responsiveFontSize;
+            oc.font = `bold ${finalFontSize}px Inter, system-ui, sans-serif`;
+
+            // Scale down if text is too wide
+            while (oc.measureText(text).width > width * 0.9 && finalFontSize > 10) {
+                finalFontSize -= 2;
+                oc.font = `bold ${finalFontSize}px Inter, system-ui, sans-serif`;
+            }
+
             oc.textAlign = 'center';
             oc.textBaseline = 'middle';
             oc.fillText(text, width / 2, height / 2);

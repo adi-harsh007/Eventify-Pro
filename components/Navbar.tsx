@@ -17,8 +17,12 @@ const Navbar: React.FC<NavbarProps> = ({ user, currentView, onViewChange, onLogo
 
   const navItems = [
     { label: 'Explore', view: ViewState.EXPLORE, icon: Compass },
-    { label: 'My Tickets', view: ViewState.MY_TICKETS, icon: Ticket },
   ];
+
+  if (!user.isAdmin) {
+    navItems.push({ label: 'My Tickets', view: ViewState.TICKETS, icon: Ticket });
+    navItems.push({ label: 'Mega Event', view: ViewState.MEGA_EVENT, icon: Sparkles });
+  }
 
   if (user.isAdmin) {
     navItems.push({ label: 'Admin', view: ViewState.ADMIN, icon: ShieldCheck });
