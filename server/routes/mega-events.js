@@ -8,7 +8,7 @@ const logger = require('../lib/logger');
 router.get('/status', authenticate, async (req, res) => {
     try {
         const db = await getDB();
-        const [rows] = await db.query('SELECT status FROM mega_registrations WHERE user_id = ? AND status = "registered"', [req.user.id]);
+        const [rows] = await db.query("SELECT status FROM mega_registrations WHERE user_id = ? AND status = 'registered'", [req.user.id]);
         res.json({ hasTicket: rows.length > 0 });
     } catch (err) {
         logger.error('Error fetching mega event status:', err);
