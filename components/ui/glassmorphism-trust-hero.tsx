@@ -15,8 +15,8 @@ import {
 // --- SUB-COMPONENTS ---
 const StatItem = ({ value, label }: { value: string; label: string }) => (
     <div className="flex flex-col items-center justify-center transition-transform hover:-translate-y-1 cursor-default">
-        <span className="text-xl font-bold text-white sm:text-2xl tracking-tight">{value}</span>
-        <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-bold sm:text-xs mt-0.5">{label}</span>
+        <span className="text-lg font-bold text-white sm:text-xl tracking-tight">{value}</span>
+        <span className="text-[9px] uppercase tracking-[0.2em] text-zinc-500 font-bold sm:text-[10px] mt-0.5">{label}</span>
     </div>
 );
 
@@ -37,11 +37,11 @@ export default function GlassmorphismTrustHero({ onGetStarted }: HeroProps) {
                 }}
             />
 
-            <div className="relative z-10 mx-auto max-w-7xl px-4 pt-24 pb-8 sm:px-6 md:pt-28 md:pb-12 lg:px-8">
-                <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-6 items-center">
+            <div className="relative z-10 mx-auto max-w-7xl px-4 pt-20 pb-6 sm:px-6 md:pt-24 md:pb-8 lg:px-8">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-6 items-center">
 
                     {/* --- LEFT COLUMN --- */}
-                    <div className="lg:col-span-7 flex flex-col justify-center space-y-6 pt-0">
+                    <div className="lg:col-span-7 flex flex-col justify-center space-y-4 pt-0">
 
                         {/* Badge */}
                         <motion.div
@@ -62,7 +62,7 @@ export default function GlassmorphismTrustHero({ onGetStarted }: HeroProps) {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-                            className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-medium tracking-tighter leading-[0.9]"
+                            className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-medium tracking-tighter leading-[0.9]"
                             style={{
                                 maskImage: "linear-gradient(180deg, black 0%, black 80%, transparent 100%)",
                                 WebkitMaskImage: "linear-gradient(180deg, black 0%, black 80%, transparent 100%)"
@@ -80,7 +80,7 @@ export default function GlassmorphismTrustHero({ onGetStarted }: HeroProps) {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-                            className="max-w-xl text-lg text-zinc-400 leading-relaxed"
+                            className="max-w-xl text-base text-zinc-400 leading-relaxed"
                         >
                             Discover experiences that combine vibrant energy with community,
                             creating unforgettable moments that inspire you and bring people together.
@@ -91,17 +91,17 @@ export default function GlassmorphismTrustHero({ onGetStarted }: HeroProps) {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-                            className="flex flex-col sm:flex-row gap-4"
+                            className="flex flex-col sm:flex-row gap-3"
                         >
                             <button
                                 onClick={onGetStarted}
-                                className="group inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-sm font-semibold text-zinc-950 transition-all hover:scale-[1.02] hover:bg-zinc-200 active:scale-[0.98]"
+                                className="group inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-zinc-950 transition-all hover:scale-[1.02] hover:bg-zinc-200 active:scale-[0.98]"
                             >
                                 Get Started
                                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                             </button>
 
-                            <button className="group inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-8 py-4 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/10 hover:border-white/20">
+                            <button className="group inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/10 hover:border-white/20">
                                 <Play className="w-4 h-4 fill-current" />
                                 Watch Showreel
                             </button>
@@ -109,36 +109,36 @@ export default function GlassmorphismTrustHero({ onGetStarted }: HeroProps) {
                     </div>
 
                     {/* --- RIGHT COLUMN --- */}
-                    <div className="lg:col-span-5 space-y-4 lg:mt-4">
+                    <div className="lg:col-span-5 space-y-3 lg:mt-4">
 
                         {/* Stats Card */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
-                            className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl shadow-2xl"
+                            className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl shadow-2xl"
                         >
                             {/* Card Glow Effect */}
                             <div className="absolute top-0 right-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-white/5 blur-3xl pointer-events-none" />
 
                             <div className="relative z-10">
-                                <div className="flex items-center gap-4 mb-3">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20">
-                                        <Target className="h-5 w-5 text-white" />
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20">
+                                        <Target className="h-4 w-4 text-white" />
                                     </div>
                                     <div>
-                                        <div className="text-2xl font-bold tracking-tight text-white">1000+</div>
-                                        <div className="text-xs text-zinc-400">Events Hosted</div>
+                                        <div className="text-xl font-bold tracking-tight text-white">1000+</div>
+                                        <div className="text-[10px] text-zinc-400">Events Hosted</div>
                                     </div>
                                 </div>
 
-                                <p className="text-sm text-zinc-400 leading-relaxed mb-6 pr-4">
+                                <p className="text-xs text-zinc-400 leading-relaxed mb-4 pr-4">
                                     Eventify Pro is your ultimate platform to discover, organize, and experience
                                     university events seamlessly.
                                 </p>
 
                                 {/* Progress Bar Section */}
-                                <div className="space-y-2 mb-6">
+                                <div className="space-y-1.5 mb-4">
                                     <div className="flex justify-between text-sm">
                                         <span className="text-zinc-400">Satisfaction Rate</span>
                                         <span className="text-white font-medium">99%</span>
@@ -148,20 +148,20 @@ export default function GlassmorphismTrustHero({ onGetStarted }: HeroProps) {
                                     </div>
                                 </div>
 
-                                <div className="h-px w-full bg-white/10 mb-4" />
+                                <div className="h-px w-full bg-white/10 mb-3" />
 
                                 {/* Mini Stats Grid (2-1 Layout) */}
-                                <div className="grid grid-cols-2 gap-y-8 gap-x-4 text-center mt-6 mb-6 relative">
+                                <div className="grid grid-cols-2 gap-y-6 gap-x-4 text-center mt-4 mb-4 relative">
                                     <StatItem value="10k+" label="Users" />
-                                    <div className="absolute left-1/2 -translate-x-1/2 w-px h-12 bg-white/10 top-2" />
+                                    <div className="absolute left-1/2 -translate-x-1/2 w-px h-10 bg-white/10 top-1" />
                                     <StatItem value="24/7" label="Support" />
-                                    <div className="col-span-2 mt-2">
+                                    <div className="col-span-2 mt-0">
                                         <StatItem value="100%" label="Uptime" />
                                     </div>
                                 </div>
 
                                 {/* Tag Pills */}
-                                <div className="mt-6 flex flex-wrap gap-2">
+                                <div className="mt-4 flex flex-wrap gap-2">
                                     <div className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-medium tracking-wide text-zinc-300">
                                         <span className="relative flex h-2 w-2">
                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -182,7 +182,7 @@ export default function GlassmorphismTrustHero({ onGetStarted }: HeroProps) {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }}
-                            className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 py-6 px-6 backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-4"
+                            className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 py-4 px-5 backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-4"
                         >
                             <h3 className="text-sm font-medium text-zinc-400">Connect with Us</h3>
 
