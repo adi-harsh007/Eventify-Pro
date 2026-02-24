@@ -26,6 +26,11 @@ const megaEventsRoutes = require('./routes/mega-events');
 const adminTodosRoutes = require('./routes/admin-todos');
 
 const app = express();
+
+// Trust the reverse proxy (e.g., Render, Heroku)
+// Required for express-rate-limit to accurately identify users' IPs
+app.set('trust proxy', 1);
+
 const PORT = process.env.PORT || 3000;
 
 // ── Middleware ───────────────────────────────────────
@@ -36,7 +41,7 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(helmet({
-    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }
+    crossOriginOpenerPolicy: false
 }));
 app.use(express.json({ limit: '1mb' }));  // #11: Prevent oversized payloads
 
