@@ -106,7 +106,18 @@ export function EventDetailsModal({
     const hasEventEnded = React.useMemo(() => {
         if (!event?.date) return false;
         try {
-            const eventDateTime = new Date(`${event.date}T${event.time}`);
+            // First parse it to get the local date representation so it matches the UI
+            const d = new Date(event.date);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const localDateStr = `${yyyy}-${mm}-${dd}`;
+            
+            // Ensure time is in HH:mm:00 format
+            const [h, m] = event.time.split(':').map(Number);
+            const formattedTime = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
+            
+            const eventDateTime = new Date(`${localDateStr}T${formattedTime}`);
             return eventDateTime <= new Date();
         } catch {
             return false;
