@@ -83,6 +83,35 @@ async function initDB() {
             )
         `);
 
+        // Global Feedbacks
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS feedbacks (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                email VARCHAR(255) NOT NULL,
+                role VARCHAR(50) DEFAULT 'Visitor',
+                rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+                comment TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_feedback_created (created_at DESC)
+            )
+        `);
+
+        // Event Feedbacks
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS event_feedbacks (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                event_id INT NOT NULL,
+                user_id INT NOT NULL,
+                rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+                comment TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+                UNIQUE KEY uq_event_user_feedback (event_id, user_id)
+            )
+        `);
+
         // Schema Migrations (Fail-safe)
         try { await pool.query('ALTER TABLE events CHANGE organizer_id created_by INT NOT NULL'); } catch (e) { }
         try { await pool.query('ALTER TABLE events ADD COLUMN is_team_event BOOLEAN DEFAULT FALSE'); } catch (e) { }
