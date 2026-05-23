@@ -191,7 +191,7 @@ router.get('/:id/feedback', async (req, res) => {
         }
 
         const [rows] = await pool.query(
-            `SELECT ef.id, ef.rating, ef.comment, ef.created_at, u.name as user_name, u.department as user_department
+            `SELECT ef.id, ef.rating, ef.comment, ef.created_at, u.name as user_name
              FROM event_feedbacks ef
              JOIN users u ON ef.user_id = u.id
              WHERE ef.event_id = ?
@@ -259,7 +259,7 @@ router.post('/:id/feedback', authenticate, async (req, res) => {
 
         // Fetch user info for real-time frontend update response
         const [feedbackRows] = await pool.query(
-            `SELECT ef.id, ef.rating, ef.comment, ef.created_at, u.name as user_name, u.department as user_department
+            `SELECT ef.id, ef.rating, ef.comment, ef.created_at, u.name as user_name
              FROM event_feedbacks ef
              JOIN users u ON ef.user_id = u.id
              WHERE ef.event_id = ? AND ef.user_id = ?`,
