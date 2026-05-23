@@ -60,6 +60,23 @@ function formatEventDateTime(dateStr: string, timeStr: string): string {
   }
 }
 
+// ── Date/time evaluation helper ─────────────────────────
+function getEventDateTime(dateStr: string, timeStr: string): Date {
+  // If dateStr is an ISO string (e.g. 2026-05-21T18:30:00.000Z)
+  // we first parse it to get the local date representation so it matches the UI.
+  const d = new Date(dateStr);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const localDateStr = `${yyyy}-${mm}-${dd}`;
+  
+  // Ensure time is in HH:mm:00 format
+  const [h, m] = timeStr.split(':').map(Number);
+  const formattedTime = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
+  
+  return new Date(`${localDateStr}T${formattedTime}`);
+}
+
 const UserDashboard: React.FC<UserDashboardProps> = ({
   events,
   registrations,
@@ -89,8 +106,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
   const isEventPast = React.useCallback((event: EventItem) => {
     if (!event.date) return false;
     try {
-      const eventDateTime = new Date(`${event.date}T${event.time}`);
-      return eventDateTime <= now;
+      return getEventDateTime(event.date, event.time) <= now;
     } catch {
       return false;
     }
@@ -153,6 +169,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
             onJoinEvent={onJoinEvent}
             onLeaveEvent={onLeaveEvent}
             onEventClick={setSelectedEventDetails}
+            isPastEvent={isEventPast}
           />
         </div>
         <EventDetailsModal
@@ -349,7 +366,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
                       <span className="h-2 w-2 rounded-full bg-emerald-400" />
                       Active Events ({filteredUpcoming.length})
                     </h3>
-                    <EventGrid events={filteredUpcoming} myRegEventIds={myRegEventIds} onJoinEvent={onJoinEvent} onLeaveEvent={onLeaveEvent} onEventClick={setSelectedEventDetails} />
+                    <EventGrid events={filteredUpcoming} myRegEventIds={myRegEventIds} onJoinEvent={onJoinEvent} onLeaveEvent={onLeaveEvent} onEventClick={setSelectedEventDetails} isPastEvent={isEventPast} />
                   </div>
                 )}
                 {filteredCompleted.length > 0 && (
@@ -358,7 +375,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
                       <span className="h-2 w-2 rounded-full bg-indigo-400" />
                       Completed Events & Reviews ({filteredCompleted.length})
                     </h3>
-                    <EventGrid events={filteredCompleted} myRegEventIds={myRegEventIds} onJoinEvent={onJoinEvent} onLeaveEvent={onLeaveEvent} onEventClick={setSelectedEventDetails} />
+                    <EventGrid events={filteredCompleted} myRegEventIds={myRegEventIds} onJoinEvent={onJoinEvent} onLeaveEvent={onLeaveEvent} onEventClick={setSelectedEventDetails} isPastEvent={isEventPast} />
                   </div>
                 )}
               </div>
@@ -379,6 +396,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
                       onJoinEvent={onJoinEvent}
                       onLeaveEvent={onLeaveEvent}
                       onEventClick={setSelectedEventDetails}
+                      isPastEvent={isEventPast}
                     />
                   ))}
 
@@ -398,6 +416,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
                         onJoinEvent={onJoinEvent}
                         onLeaveEvent={onLeaveEvent}
                         onEventClick={setSelectedEventDetails}
+                        isPastEvent={isEventPast}
                       />
                     </div>
                   )}
@@ -431,7 +450,8 @@ const DeptRow: React.FC<{
   onJoinEvent: (id: number, teamName?: string) => void;
   onLeaveEvent: (id: number) => void;
   onEventClick: (event: EventItem) => void;
-}> = ({ dept, events, myRegEventIds, onJoinEvent, onLeaveEvent, onEventClick }) => {
+  isPastEvent: (event: EventItem) => boolean;
+}> = ({ dept, events, myRegEventIds, onJoinEvent, onLeaveEvent, onEventClick, isPastEvent }) => {
   const rowRef = useRef<HTMLDivElement>(null);
   const meta = DEPT_META[dept];
 
@@ -477,7 +497,7 @@ const DeptRow: React.FC<{
         {events.map(event => {
           const isJoined = myRegEventIds.has(event.id);
           const isFull = event.registered_count >= event.capacity;
-          const isPast = (() => { try { return new Date(`${event.date}T${event.time}`) <= new Date(); } catch { return false; } })();
+          const isPast = isPastEvent(event);
           return (
             <div key={event.id} className="shrink-0" style={{ width: 'min(340px, 85vw)', scrollSnapAlign: 'start' }}>
               <EventCard
@@ -512,13 +532,14 @@ const EventGrid: React.FC<{
   onJoinEvent: (id: number, teamName?: string) => void;
   onLeaveEvent: (id: number) => void;
   onEventClick: (event: EventItem) => void;
-}> = ({ events, myRegEventIds, onJoinEvent, onLeaveEvent, onEventClick }) => (
+  isPastEvent: (event: EventItem) => boolean;
+}> = ({ events, myRegEventIds, onJoinEvent, onLeaveEvent, onEventClick, isPastEvent }) => (
   <div className="grid pb-16"
     style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))', gap: '24px' }}>
     {events.map(event => {
       const isJoined = myRegEventIds.has(event.id);
       const isFull = event.registered_count >= event.capacity;
-      const isPast = (() => { try { return new Date(`${event.date}T${event.time}`) <= new Date(); } catch { return false; } })();
+      const isPast = isPastEvent(event);
       return (
         <EventCard
           key={event.id}
@@ -554,7 +575,8 @@ const TicketsContent: React.FC<{
   onJoinEvent: (id: number, teamName?: string) => void;
   onLeaveEvent: (id: number) => void;
   onEventClick: (event: EventItem) => void;
-}> = ({ upcomingEvents, completedEvents, myRegEventIds, searchTerm, setSearchTerm, selectedDept, setSelectedDept, onJoinEvent, onLeaveEvent, onEventClick }) => {
+  isPastEvent: (event: EventItem) => boolean;
+}> = ({ upcomingEvents, completedEvents, myRegEventIds, searchTerm, setSearchTerm, selectedDept, setSelectedDept, onJoinEvent, onLeaveEvent, onEventClick, isPastEvent }) => {
   const [showCalendar, setShowCalendar] = React.useState(false);
 
   return (
@@ -694,7 +716,7 @@ const TicketsContent: React.FC<{
                     <span className="h-2 w-2 rounded-full bg-emerald-400" />
                     Active Bookings ({upcomingEvents.length})
                   </h3>
-                  <EventGrid events={upcomingEvents} myRegEventIds={myRegEventIds} onJoinEvent={onJoinEvent} onLeaveEvent={onLeaveEvent} onEventClick={onEventClick} />
+                  <EventGrid events={upcomingEvents} myRegEventIds={myRegEventIds} onJoinEvent={onJoinEvent} onLeaveEvent={onLeaveEvent} onEventClick={onEventClick} isPastEvent={isPastEvent} />
                 </div>
               )}
               {completedEvents.length > 0 && (
@@ -703,7 +725,7 @@ const TicketsContent: React.FC<{
                     <span className="h-2 w-2 rounded-full bg-indigo-400" />
                     Completed Events & Memories ({completedEvents.length})
                   </h3>
-                  <EventGrid events={completedEvents} myRegEventIds={myRegEventIds} onJoinEvent={onJoinEvent} onLeaveEvent={onLeaveEvent} onEventClick={onEventClick} />
+                  <EventGrid events={completedEvents} myRegEventIds={myRegEventIds} onJoinEvent={onJoinEvent} onLeaveEvent={onLeaveEvent} onEventClick={onEventClick} isPastEvent={isPastEvent} />
                 </div>
               )}
             </>
