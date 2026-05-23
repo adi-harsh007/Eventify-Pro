@@ -80,7 +80,11 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
       .map(r => r.event_id)
   );
 
-  const now = React.useMemo(() => new Date(), []);
+  const [now, setNow] = useState(() => new Date());
+  React.useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60000); // update every minute
+    return () => clearInterval(timer);
+  }, []);
 
   const isEventPast = React.useCallback((event: EventItem) => {
     if (!event.date) return false;

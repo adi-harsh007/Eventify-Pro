@@ -1,6 +1,7 @@
 const express = require('express');
 const { getDB } = require('../lib/db');
 const { authenticate, requireAdmin } = require('../middleware/auth');
+const { normalizeEventDateTime } = require('../lib/date');
 const logger = require('../lib/logger');
 
 const router = express.Router();
@@ -75,13 +76,22 @@ router.post('/', authenticate, async (req, res) => {
 
         const event = events[0];
 
-        // Block registration for completed events
         const [eventDateRows] = await conn.query('SELECT date, time FROM events WHERE id = ?', [eventId]);
-        const eventDateTime = new Date(`${eventDateRows[0].date}T${eventDateRows[0].time}`);
-        if (eventDateTime <= new Date()) {
-            await conn.rollback();
-            conn.release();
-            return res.status(400).json({ message: 'This event has already ended. Registration is closed.' });
+        const eventDateRow = eventDateRows[0];
+        
+        try {
+            const eventDateTime = normalizeEventDateTime({
+                date: eventDateRow.date,
+                time: eventDateRow.time
+            });
+            if (eventDateTime <= new Date()) {
+                await conn.rollback();
+                conn.release();
+                return res.status(400).json({ message: 'This event has already ended. Registration is closed.' });
+            }
+        } catch (err) {
+            logger.error(`Error parsing event date/time for registration (Event ID: ${eventId}):`, err);
+            // Optionally, handle error if event date is unparseable
         }
 
         if (event.registered_count >= event.capacity) {
