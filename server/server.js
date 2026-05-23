@@ -7,6 +7,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const multer = require('multer'); // Added multer
 const fs = require('fs'); // Added fs
+const jwt = require('jsonwebtoken'); // Added jwt
 const { GoogleGenAI } = require('@google/genai');
 
 const logger = require('./lib/logger');
@@ -24,6 +25,7 @@ const discoveryRoutes = require('./routes/discovery');
 const adminRoutes = require('./routes/admin');
 const megaEventsRoutes = require('./routes/mega-events');
 const adminTodosRoutes = require('./routes/admin-todos');
+const feedbackRoutes = require('./routes/feedback');
 
 const app = express();
 
@@ -127,6 +129,107 @@ app.post('/api/ai/generate', aiLimiter, async (req, res) => {
     }
 });
 
+// EventBot Chat Store (in-memory tracking)
+const chatUsageStore = new Map();
+
+const CLEANUP_INTERVAL_MS = 15 * 60 * 1000;
+const STALE_TTL_MS = 60 * 60 * 1000;
+const usageCleanupTimer = setInterval(() => {
+    const now = Date.now();
+    for (const [key, value] of chatUsageStore.entries()) {
+        if (now - value.lastSeen > STALE_TTL_MS) {
+            chatUsageStore.delete(key);
+        }
+    }
+}, CLEANUP_INTERVAL_MS);
+
+process.on('SIGTERM', () => clearInterval(usageCleanupTimer));
+process.on('SIGINT', () => clearInterval(usageCleanupTimer));
+
+app.post('/api/ai/chat', aiLimiter, async (req, res) => {
+    try {
+        const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+        if (!apiKey) return res.status(500).json({ message: 'API key not configured.' });
+
+        const { message, history = [] } = req.body;
+        if (!message) return res.status(400).json({ message: 'Message is required.' });
+
+        // Determine identity
+        let identityKey = req.ip;
+        let isGuest = true;
+        
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.split(' ')[1];
+            try {
+                const payload = jwt.verify(token, process.env.JWT_SECRET);
+                identityKey = `user_${payload.id || payload.sub || token}`;
+                isGuest = false;
+            } catch (err) {
+                // Invalid token, treat as guest
+            }
+        }
+
+        // Enforce Limits
+        const limit = isGuest ? 1 : 5;
+        const currentData = chatUsageStore.get(identityKey) || { count: 0, lastSeen: Date.now() };
+        const currentCount = currentData.count;
+        
+        chatUsageStore.set(identityKey, { ...currentData, lastSeen: Date.now() });
+        
+        if (currentCount >= limit) {
+            return res.status(429).json({ 
+                message: isGuest 
+                    ? 'Guest limit reached. Please log in to continue chatting.' 
+                    : 'Session limit reached. Please log in again to start a new chat session.',
+                limitReached: true,
+                isGuest
+            });
+        }
+
+        // Sanitize input
+        const safeMessage = String(message).slice(0, 500);
+
+        const ai = new GoogleGenAI({ apiKey });
+        
+        const systemInstruction = `You are EventBot, the official AI assistant for Eventify Pro. 
+Your goal is to answer questions strictly related to the Eventify Pro platform, campus events, scheduling, and event management. 
+If a user asks about topics completely unrelated to Eventify Pro or events (e.g., coding help, general knowledge, math), politely decline and state that you are only here to help with Eventify Pro. Do not answer unnecessary questions. Keep your answers concise and helpful.`;
+
+        // Format history for Gemini API
+        const formattedHistory = history.map(msg => ({
+            role: msg.role === 'bot' ? 'model' : 'user',
+            parts: [{ text: msg.text }]
+        }));
+
+        formattedHistory.push({
+            role: 'user',
+            parts: [{ text: safeMessage }]
+        });
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: formattedHistory,
+            config: {
+                systemInstruction: systemInstruction,
+                temperature: 0.5,
+            },
+        });
+
+        // Increment count on success
+        chatUsageStore.set(identityKey, { count: currentCount + 1, lastSeen: Date.now() });
+
+        res.json({ 
+            reply: response.text || "I'm sorry, I couldn't process that.",
+            remaining: limit - (currentCount + 1)
+        });
+
+    } catch (error) {
+        logger.error("EventBot Chat Error:", error);
+        res.status(500).json({ message: "Failed to process chat. Please try again." });
+    }
+});
+
 // Image upload endpoint (#5: require authentication, migrated to Cloudinary)
 app.post('/api/upload', authenticate, upload.single('image'), (req, res) => {
     if (!req.file) {
@@ -144,6 +247,7 @@ app.use('/api/discovery', discoveryRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/mega-events', megaEventsRoutes);
 app.use('/api/admin-todos', adminTodosRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // ── Health check (#9: minimal public response) ────────────────────

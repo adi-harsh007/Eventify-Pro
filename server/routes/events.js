@@ -8,6 +8,59 @@ const router = express.Router();
 
 // ── Helpers ────────────────────────────────────────
 
+function normalizeEventDateTime(event) {
+    if (!event || !event.date || !event.time) {
+        throw new Error("Invalid event object: missing date or time");
+    }
+
+    let dateStr;
+    if (event.date instanceof Date) {
+        if (isNaN(event.date)) throw new Error("Invalid event date object");
+        dateStr = event.date.toISOString().split('T')[0];
+    } else {
+        dateStr = String(event.date).trim();
+        const dateMatch = dateStr.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (dateMatch) {
+            dateStr = dateMatch[1];
+        } else {
+            const parsed = new Date(dateStr);
+            if (isNaN(parsed)) throw new Error("Invalid event date format");
+            dateStr = parsed.toISOString().split('T')[0];
+        }
+    }
+
+    let timeStr = String(event.time).trim();
+    if (!timeStr) throw new Error("Event time cannot be empty");
+
+    const ampmMatch = timeStr.match(/^(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?\s*(AM|PM)$/i);
+    const hr24Match = timeStr.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+
+    if (ampmMatch) {
+        let h = parseInt(ampmMatch[1], 10);
+        const m = ampmMatch[2] || "00";
+        const s = ampmMatch[3] || "00";
+        const modifier = ampmMatch[4].toUpperCase();
+
+        if (h === 12) h = 0;
+        if (modifier === 'PM') h += 12;
+
+        timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    } else if (hr24Match) {
+        const h = hr24Match[1];
+        const m = hr24Match[2];
+        const s = hr24Match[3] || "00";
+        timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    } else {
+        throw new Error("Invalid event time format");
+    }
+
+    const finalDate = new Date(`${dateStr}T${timeStr}`);
+    if (isNaN(finalDate)) {
+        throw new Error("Resulting event date and time is invalid");
+    }
+    return finalDate;
+}
+
 function decodeCursor(cursor) {
     try {
         return JSON.parse(Buffer.from(cursor, 'base64').toString('utf-8'));
@@ -20,6 +73,21 @@ function encodeCursor(row) {
         id: row.id
     })).toString('base64');
 }
+
+// GET /api/events/public — fetch top 5 upcoming events for landing page
+router.get('/public', async (req, res) => {
+    try {
+        const pool = getDB();
+        // Fetch top 5 upcoming events
+        const [rows] = await pool.query(
+            "SELECT id, title, description, date, time, location, category, image_url FROM events WHERE CONCAT(date, ' ', time) >= NOW() ORDER BY date ASC, time ASC LIMIT 5"
+        );
+        res.json({ events: rows });
+    } catch (error) {
+        logger.error('Get public events error:', error);
+        res.status(500).json({ message: 'Failed to fetch public events.' });
+    }
+});
 
 // GET /api/events — fetch events with cursor-based pagination
 router.get('/', authenticate, async (req, res) => {
@@ -153,6 +221,107 @@ router.delete('/:id', authenticate, async (req, res) => {
     } catch (error) {
         logger.error('Delete event error:', error);
         res.status(500).json({ message: 'Failed to delete event.' });
+    }
+});
+
+// GET /api/events/:id/feedback — fetch all feedback for a specific event (visible only after event ends)
+router.get('/:id/feedback', async (req, res) => {
+    try {
+        const pool = getDB();
+        
+        // Check if event exists and get its date/time
+        const [eventRows] = await pool.query('SELECT date, time FROM events WHERE id = ?', [req.params.id]);
+        if (eventRows.length === 0) {
+            return res.status(404).json({ message: 'Event not found.' });
+        }
+        
+        const event = eventRows[0];
+        const eventDateTime = normalizeEventDateTime(event);
+        if (eventDateTime > new Date()) {
+            return res.json({ feedbacks: [] }); // Empty array before event ends
+        }
+
+        const [rows] = await pool.query(
+            `SELECT ef.id, ef.rating, ef.comment, ef.created_at, u.name as user_name, u.department as user_department
+             FROM event_feedbacks ef
+             JOIN users u ON ef.user_id = u.id
+             WHERE ef.event_id = ?
+             ORDER BY ef.created_at DESC`,
+            [req.params.id]
+        );
+        res.json({ feedbacks: rows });
+    } catch (error) {
+        logger.error('Get event feedback error:', error);
+        res.status(500).json({ message: 'Failed to fetch event feedback.' });
+    }
+});
+
+// POST /api/events/:id/feedback — submit feedback for a specific event (only registered & ended)
+router.post('/:id/feedback', authenticate, async (req, res) => {
+    try {
+        const { rating, comment } = req.body;
+        const eventId = req.params.id;
+        const userId = req.user.id;
+
+        if (!rating || !comment) {
+            return res.status(400).json({ message: 'Rating and comment are required.' });
+        }
+
+        const parsedRating = parseInt(rating);
+        if (isNaN(parsedRating) || parsedRating < 1 || parsedRating > 5) {
+            return res.status(400).json({ message: 'Rating must be between 1 and 5.' });
+        }
+
+        const pool = getDB();
+        
+        // Check if event exists and get date/time
+        const [eventRows] = await pool.query('SELECT date, time FROM events WHERE id = ?', [eventId]);
+        if (eventRows.length === 0) {
+            return res.status(404).json({ message: 'Event not found.' });
+        }
+
+        const event = eventRows[0];
+        const eventDateTime = normalizeEventDateTime(event);
+        if (eventDateTime > new Date()) {
+            return res.status(400).json({ message: 'You can only review an event after it has ended!' });
+        }
+
+        // Verify that the user is registered for the event
+        const [regRows] = await pool.query(
+            'SELECT id FROM registrations WHERE event_id = ? AND user_id = ?',
+            [eventId, userId]
+        );
+        if (regRows.length === 0) {
+            return res.status(403).json({ message: 'Only registered attendees can leave feedback for this event!' });
+        }
+
+        // Insert new feedback
+        try {
+            await pool.query(
+                'INSERT INTO event_feedbacks (event_id, user_id, rating, comment) VALUES (?, ?, ?, ?)',
+                [eventId, userId, parsedRating, comment]
+            );
+        } catch (dbErr) {
+            if (dbErr.code === 'ER_DUP_ENTRY') {
+                return res.status(400).json({ message: 'You have already submitted feedback for this event!' });
+            }
+            throw dbErr;
+        }
+
+        // Fetch user info for real-time frontend update response
+        const [feedbackRows] = await pool.query(
+            `SELECT ef.id, ef.rating, ef.comment, ef.created_at, u.name as user_name, u.department as user_department
+             FROM event_feedbacks ef
+             JOIN users u ON ef.user_id = u.id
+             WHERE ef.event_id = ? AND ef.user_id = ?`,
+            [eventId, userId]
+        );
+
+        logger.info(`Event feedback submitted by User ID ${userId} for Event ID ${eventId}`);
+        res.status(201).json({ feedback: feedbackRows[0] });
+    } catch (error) {
+        logger.error('Submit event feedback error:', error);
+        res.status(500).json({ message: 'Failed to submit event feedback.' });
     }
 });
 

@@ -142,4 +142,42 @@ router.get('/users', async (req, res) => {
     }
 });
 
+// GET /api/admin/feedback — list all feedback across all events
+router.get('/feedback', async (req, res) => {
+    try {
+        const pool = getDB();
+        const [rows] = await pool.query(
+            `SELECT f.id, f.rating, f.comment, f.created_at, 
+                    u.name as user_name, u.email as user_email,
+                    e.title as event_title
+             FROM event_feedbacks f
+             JOIN users u ON f.user_id = u.id
+             JOIN events e ON f.event_id = e.id
+             ORDER BY f.created_at DESC`
+        );
+        res.json(rows);
+    } catch (error) {
+        logger.error('Admin get feedback error:', error);
+        res.status(500).json({ message: 'Failed to fetch feedback.' });
+    }
+});
+
+// DELETE /api/admin/feedback/:id — delete a specific feedback
+router.delete('/feedback/:id', async (req, res) => {
+    try {
+        const pool = getDB();
+        const [existing] = await pool.query('SELECT id FROM event_feedbacks WHERE id = ?', [req.params.id]);
+        if (existing.length === 0) {
+            return res.status(404).json({ message: 'Feedback not found.' });
+        }
+
+        await pool.query('DELETE FROM event_feedbacks WHERE id = ?', [req.params.id]);
+        logger.info(`Admin deleted feedback ${req.params.id}`);
+        res.json({ message: 'Feedback deleted successfully.' });
+    } catch (error) {
+        logger.error('Admin delete feedback error:', error);
+        res.status(500).json({ message: 'Failed to delete feedback.' });
+    }
+});
+
 module.exports = router;

@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Loader2, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { User } from '../../types';
-import { apiLogin, apiSignup, apiGoogleLogin, apiSendOtp, apiForgotPassword, apiResetPassword } from '../../apiService';
+import { apiGoogleLogin } from '../../apiService';
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
 
 import { useGoogleLogin } from '@react-oauth/google';
 
@@ -181,6 +181,7 @@ function AnimatedLoginPage({ onLogin, onNavigateHome }: AnimatedLoginPageProps) 
             try {
                 // Pass the Access Token directly to our matching verified backend route
                 const data = await apiGoogleLogin(tokenResponse.access_token);
+                setIsLoading(false);
                 onLogin(data.user, data.token);
             } catch (err: any) {
                 setError(err.message || 'Google authentication failed');

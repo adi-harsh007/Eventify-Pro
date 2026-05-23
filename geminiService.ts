@@ -1,5 +1,5 @@
 
-import { GoogleGenAI } from "@google/genai";
+
 import { apiGenerateDescription } from './apiService';
 
 export const generateEventDescription = async (title: string, category: string): Promise<string> => {

@@ -122,6 +122,14 @@ const MegaEventPage: React.FC<MegaEventPageProps> = ({ user }) => {
         return `${hr}:${parts[1]} ${ampm}`;
     };
 
+    const validItems = schedule.filter(item => item.event_date);
+    const isMegaEventCompleted = validItems.length > 0 && validItems.every(item => {
+        const dateStr = item.event_date.split('T')[0];
+        const timeStr = item.event_time || '23:59:59';
+        const itemDate = new Date(`${dateStr}T${timeStr}`);
+        return itemDate.getTime() < Date.now();
+    });
+
     return (
         <div className="relative min-h-[calc(100vh-64px)] w-full overflow-y-auto" style={{ backgroundColor: '#0B0F19' }}>
             {/* Background Glow */}
@@ -155,6 +163,24 @@ const MegaEventPage: React.FC<MegaEventPageProps> = ({ user }) => {
 
                         {loading ? (
                             <div className="w-8 h-8 rounded-full border-2 border-violet-500 border-t-transparent animate-spin"></div>
+                        ) : isMegaEventCompleted ? (
+                            <div className="flex flex-col items-center space-y-4 animate-in zoom-in duration-500">
+                                <div className="w-16 h-16 bg-gray-500/10 rounded-full flex items-center justify-center border border-gray-500/20">
+                                    <CheckCircle2 className="w-8 h-8 text-gray-400" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-white">Mega Fest Completed</h3>
+                                <p className="text-sm text-gray-400/80">Thank you for participating!</p>
+                                {hasTicket && (
+                                     <div className="mt-4 w-full rounded-xl border border-white/10 p-4 border-dashed relative overflow-hidden"
+                                     style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)', opacity: 0.5 }}>
+                                     <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[#0f1423] rounded-full border-r border-white/10 border-dashed"></div>
+                                     <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[#0f1423] rounded-full border-l border-white/10 border-dashed"></div>
+                                     <p className="text-xs uppercase tracking-[0.3em] text-white/40 mb-1">Admit One</p>
+                                     <p className="text-lg font-mono font-bold text-violet-300">{user.name}</p>
+                                     <p className="text-sm text-white/50 mt-1">3-Day Mega Event</p>
+                                 </div>
+                                )}
+                            </div>
                         ) : hasTicket ? (
                             <div className="flex flex-col items-center space-y-4 animate-in zoom-in duration-500">
                                 <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20">

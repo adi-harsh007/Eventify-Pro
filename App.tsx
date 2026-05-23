@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { User, EventItem, Registration, ViewState } from './types';
 import { apiGetEvents, apiGetRegistrations, apiJoinEvent, apiLeaveEvent, apiGetMe } from './apiService';
 import { AnimatedLoginPage } from './components/ui/animated-characters-login-page';
@@ -9,6 +9,7 @@ import UserDashboard from './components/UserDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import MegaEventPage from './components/MegaEventPage';
 import CreateEventModal from './components/CreateEventModal';
+import Chatbot from './components/Chatbot';
 import { cn } from './lib/utils';
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   // ── Auth ─────────────────────────────────────────
   const handleLogin = (user: User, tkn: string) => {
@@ -192,19 +194,22 @@ function App() {
   };
 
   return (
-    <Routes>
-      <Route path="/login" element={
-        currentUser ? <Navigate to="/" replace /> : <AnimatedLoginPage onLogin={(u, t) => { handleLogin(u, t); navigate('/'); }} onNavigateHome={() => navigate('/')} />
-      } />
-      <Route path="/" element={
-        !currentUser ? (
-          <LandingHero onGetStarted={() => navigate('/login')} />
-        ) : (
-          renderMainApp()
-        )
-      } />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/login" element={
+          currentUser ? <Navigate to="/" replace /> : <AnimatedLoginPage onLogin={(u, t) => { handleLogin(u, t); navigate('/'); }} onNavigateHome={() => navigate('/')} />
+        } />
+        <Route path="/" element={
+          !currentUser ? (
+            <LandingHero onGetStarted={() => navigate('/login')} />
+          ) : (
+            renderMainApp()
+          )
+        } />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      {location.pathname !== '/login' && <Chatbot currentUser={currentUser} />}
+    </>
   );
 }
 

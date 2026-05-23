@@ -46,3 +46,13 @@ export interface Registration {
   name?: string;
   email?: string;
 }
+
+export interface FeedbackItem {
+  id: number;
+  rating: number;
+  comment: string;
+  created_at: string;
+  user_name: string;
+  user_email: string;
+  event_title: string;
+}

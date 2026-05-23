@@ -77,19 +77,10 @@ router.post('/send-otp', async (req, res) => {
 
         const sent = await sendEmail(email.toLowerCase(), 'Eventify Pro - Verification Code', emailHtml);
 
-        // Developer Intercept: Only log OTP in development mode
-        if (process.env.NODE_ENV !== 'production') {
-            console.log(`\n========================================`);
-            console.log(`\u{1F511} DEVELOPER OTP INTERCEPT:`);
-            console.log(`To: ${email}`);
-            console.log(`Code: ${otp}`);
-            console.log(`========================================\n`);
-        }
-
         if (!sent) {
             if (process.env.NODE_ENV !== 'production') {
-                logger.warn(`Email failed to send to ${email}. Continuing in dev mode...`);
-                return res.json({ message: 'Email failed but OTP was logged to the terminal!' });
+                logger.warn(`Email failed to send to ${email}. Check mailer configuration.`);
+                return res.status(500).json({ message: 'Email failed to send. Please check your mailer configuration or try again.' });
             }
             return res.status(500).json({ message: 'Failed to send verification email.' });
         }
@@ -175,8 +166,8 @@ router.post('/signup', async (req, res) => {
             try { await redis.del(`otp:${email.toLowerCase()}`); } catch (e) { /* ignore */ }
         }
 
-        const user = { id: result.insertId, name: name.trim(), email: email.toLowerCase() };
-        user.isAdmin = getAdminEmails().includes(user.email);
+        const user = { id: result.insertId, name: name.trim(), email: email.toLowerCase().trim() };
+        user.isAdmin = getAdminEmails().includes(user.email.toLowerCase().trim());
         const token = generateToken(user);
 
         res.status(201).json({ token, user });
@@ -364,14 +355,6 @@ router.post('/forgot-password', async (req, res) => {
         `;
 
         const sent = await sendEmail(email.toLowerCase(), 'Eventify Pro - Password Reset Code', emailHtml);
-
-        if (process.env.NODE_ENV !== 'production') {
-            console.log(`\n========================================`);
-            console.log(`\u{1F511} PASSWORD RESET OTP:`);
-            console.log(`To: ${email}`);
-            console.log(`Code: ${otp}`);
-            console.log(`========================================\n`);
-        }
 
         if (!sent) {
             logger.warn(`Reset email failed to send to ${email}`);

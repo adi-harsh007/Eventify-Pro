@@ -22,8 +22,8 @@ CREATE TABLE IF NOT EXISTS events (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(100) NOT NULL,
     description TEXT NOT NULL,
-    date VARCHAR(20) NOT NULL,
-    time VARCHAR(20) NOT NULL,
+    date DATE NOT NULL,
+    time TIME NOT NULL,
     location VARCHAR(255) NOT NULL,
     capacity INT NOT NULL CHECK (capacity > 0),
     registered_count INT NOT NULL DEFAULT 0,
@@ -61,4 +61,29 @@ CREATE TABLE IF NOT EXISTS registrations (
     UNIQUE KEY uq_user_event (user_id, event_id),
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE
+) ENGINE = InnoDB;
+
+-- ─── Feedbacks ──────────────────────────────────────
+CREATE TABLE IF NOT EXISTS feedbacks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    role VARCHAR(50) DEFAULT 'Visitor',
+    rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_feedback_created (created_at DESC)
+) ENGINE = InnoDB;
+
+-- ─── Event Feedbacks ─────────────────────────────────
+CREATE TABLE IF NOT EXISTS event_feedbacks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    event_id INT NOT NULL,
+    user_id INT NOT NULL,
+    rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    UNIQUE KEY uq_event_user_feedback (event_id, user_id)
 ) ENGINE = InnoDB;

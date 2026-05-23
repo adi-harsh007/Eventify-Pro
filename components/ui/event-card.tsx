@@ -15,6 +15,7 @@ interface EventCardProps extends React.HTMLAttributes<HTMLDivElement> {
     date: string;
     isRegistered: boolean;
     isSoldOut?: boolean;
+    isPastEvent?: boolean;
     isTeamEvent?: boolean;
     maxTeamSize?: number;
     onToggleRegistration: (teamName?: string) => void;
@@ -33,6 +34,7 @@ const EventCard = React.forwardRef<HTMLDivElement, EventCardProps>(
             date,
             isRegistered,
             isSoldOut = false,
+            isPastEvent = false,
             isTeamEvent,
             maxTeamSize,
             onToggleRegistration,
@@ -98,21 +100,23 @@ const EventCard = React.forwardRef<HTMLDivElement, EventCardProps>(
                                 <Button
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        setShowConfirm(true);
+                                        if (!isPastEvent) setShowConfirm(true);
                                     }}
-                                    disabled={isSoldOut && !isRegistered}
+                                    disabled={(isSoldOut && !isRegistered) || isPastEvent}
                                     size="sm"
                                     className={cn(
                                         "cursor-pointer transition-all duration-300",
-                                        isRegistered
-                                            ? "bg-white/10 text-white hover:bg-red-500/20 hover:text-red-400 border border-white/10 hover:shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:scale-105"
-                                            : isSoldOut
-                                                ? "cursor-not-allowed bg-white/5 text-white/40 border border-white/10 shadow-none hover:shadow-none hover:-translate-y-0"
-                                                : "hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.5)]"
+                                        isPastEvent
+                                            ? "cursor-not-allowed bg-indigo-500/10 text-indigo-300/70 border border-indigo-500/20 shadow-none hover:shadow-none hover:-translate-y-0"
+                                            : isRegistered
+                                                ? "bg-white/10 text-white hover:bg-red-500/20 hover:text-red-400 border border-white/10 hover:shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:scale-105"
+                                                : isSoldOut
+                                                    ? "cursor-not-allowed bg-white/5 text-white/40 border border-white/10 shadow-none hover:shadow-none hover:-translate-y-0"
+                                                    : "hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.5)]"
                                     )}
                                 >
-                                    {isRegistered ? "Leave Event" : isSoldOut ? "Sold Out" : "Get Ticket"}
-                                    {!isSoldOut && <Ticket className="ml-2 h-4 w-4" />}
+                                    {isPastEvent ? "Event Ended" : isRegistered ? "Leave Event" : isSoldOut ? "Sold Out" : "Get Ticket"}
+                                    {!isSoldOut && !isPastEvent && <Ticket className="ml-2 h-4 w-4" />}
                                 </Button>
                             </div>
                         </div>

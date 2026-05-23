@@ -1,10 +1,11 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
-import { X, CalendarDays, Clock, MapPin, Users, Building, Tag, Ticket, ShieldCheck } from 'lucide-react';
+import { X, CalendarDays, Clock, MapPin, Users, Building, Tag, ShieldCheck, MessageSquare, Star, Send } from 'lucide-react';
 import { EventItem } from '../../types';
 import { cn } from '../../lib/utils';
 import { Button } from './button';
 import { ConfirmModal } from './confirm-modal';
+import { apiGetEventFeedback, apiSubmitEventFeedback } from '../../apiService';
 
 interface EventDetailsModalProps {
     event: EventItem;
@@ -24,6 +25,93 @@ export function EventDetailsModal({
     isAdmin
 }: EventDetailsModalProps) {
     const [showConfirm, setShowConfirm] = React.useState(false);
+
+    // Event Feedbacks State & Hooks
+    const [feedbacks, setFeedbacks] = React.useState<any[]>([]);
+    const [isLoadingFeedbacks, setIsLoadingFeedbacks] = React.useState(false);
+    const [submitting, setSubmitting] = React.useState(false);
+    const [rating, setRating] = React.useState(5);
+    const [comment, setComment] = React.useState('');
+    const [errorMessage, setErrorMessage] = React.useState('');
+    const [successMessage, setSuccessMessage] = React.useState('');
+
+    const currentUser = React.useMemo(() => {
+        try {
+            const str = localStorage.getItem('user');
+            return str ? JSON.parse(str) : null;
+        } catch {
+            return null;
+        }
+    }, [isOpen]);
+
+    React.useEffect(() => {
+        if (isOpen && event?.id) {
+            setFeedbacks([]);
+            setIsLoadingFeedbacks(true);
+            setSuccessMessage('');
+            setErrorMessage('');
+            setRating(5);
+            setComment('');
+            
+            apiGetEventFeedback(event.id)
+                .then((data) => {
+                    if (data?.feedbacks) {
+                        setFeedbacks(data.feedbacks);
+                    }
+                })
+                .catch((err) => {
+                    console.error("Failed to load event feedbacks:", err);
+                })
+                .finally(() => {
+                    setIsLoadingFeedbacks(false);
+                });
+        }
+    }, [isOpen, event?.id]);
+
+    const handleFeedbackSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!comment.trim() || submitting || !event?.id) return;
+
+        setSubmitting(true);
+        setErrorMessage('');
+        setSuccessMessage('');
+
+        try {
+            const res = await apiSubmitEventFeedback(event.id, { rating, comment });
+            if (res?.feedback) {
+                setFeedbacks((prev) => [res.feedback, ...prev]);
+                setSuccessMessage('Thank you! Your feedback has been posted successfully.');
+                setComment('');
+            } else {
+                setErrorMessage(res?.message || 'Failed to submit feedback.');
+            }
+        } catch (err: any) {
+            console.error("Feedback submit error:", err);
+            setErrorMessage(err?.message || 'Failed to submit feedback.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const hasAlreadyReviewed = React.useMemo(() => {
+        return feedbacks.some(f => f.user_name === currentUser?.name);
+    }, [feedbacks, currentUser]);
+
+    const averageRating = React.useMemo(() => {
+        return feedbacks.length > 0 
+            ? (feedbacks.reduce((acc, curr) => acc + curr.rating, 0) / feedbacks.length).toFixed(1)
+            : null;
+    }, [feedbacks]);
+
+    const hasEventEnded = React.useMemo(() => {
+        if (!event?.date) return false;
+        try {
+            const eventDateTime = new Date(`${event.date}T${event.time}`);
+            return eventDateTime <= new Date();
+        } catch {
+            return false;
+        }
+    }, [event?.date, event?.time]);
 
     if (!isOpen) return null;
 
@@ -129,6 +217,163 @@ export function EventDetailsModal({
                                     {event.description}
                                 </div>
                             </div>
+
+                            {/* Attendee Feedback & Reviews */}
+                            {hasEventEnded && (
+                                <div className="space-y-6 pt-6 border-t border-white/10">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                                            <MessageSquare className="w-5 h-5 text-indigo-400" />
+                                            Attendee Reviews
+                                        </h3>
+                                        {averageRating && (
+                                            <div className="flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-3 py-1 text-xs font-semibold text-indigo-300 shadow-sm">
+                                                <Star className="w-3.5 h-3.5 fill-indigo-400 text-indigo-400" />
+                                                {averageRating} Rating
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Reviews List */}
+                                    {isLoadingFeedbacks ? (
+                                        <div className="flex items-center justify-center py-8">
+                                            <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                                        </div>
+                                    ) : feedbacks.length === 0 ? (
+                                        <div className="bg-white/[0.02] border border-white/[0.04] rounded-2xl p-6 text-center">
+                                            <p className="text-white/40 text-sm">No reviews yet. Share what you like about this event below!</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 gap-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                                            {feedbacks.map((fb) => (
+                                                <div
+                                                    key={fb.id}
+                                                    className="bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.05] rounded-2xl p-4 transition-all duration-300 relative overflow-hidden"
+                                                >
+                                                    <div className="flex items-start justify-between gap-4 mb-2">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-300 text-xs font-bold shadow-sm">
+                                                                {fb.user_name?.charAt(0).toUpperCase()}
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-sm font-semibold text-white">{fb.user_name}</div>
+                                                                <div className="text-xs text-white/50">{fb.user_department || 'General'}</div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-0.5">
+                                                            {[1, 2, 3, 4, 5].map((s) => (
+                                                                <Star
+                                                                    key={s}
+                                                                    className={cn(
+                                                                        "w-3.5 h-3.5",
+                                                                        s <= fb.rating
+                                                                            ? "fill-indigo-400 text-indigo-400"
+                                                                            : "text-white/20"
+                                                                    )}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-white/80 text-sm pl-1 leading-relaxed whitespace-pre-wrap">{fb.comment}</p>
+                                                    <div className="text-[10px] text-white/30 text-right mt-2">
+                                                        {new Date(fb.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Add Feedback Form */}
+                                    {!isAdmin && currentUser && (
+                                        <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-5 relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 blur-2xl rounded-full" />
+                                            
+                                            <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-1.5">
+                                                Share Your Feedback
+                                            </h4>
+
+                                            {!isRegistered ? (
+                                                <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 text-center">
+                                                    <p className="text-white/45 text-xs font-medium">Only registered attendees can submit a review for this event.</p>
+                                                </div>
+                                            ) : hasAlreadyReviewed ? (
+                                                <div className="flex items-center gap-2 text-emerald-400 text-xs bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3">
+                                                    <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping shrink-0" />
+                                                    <span>You have successfully shared your feedback for this event. Thank you!</span>
+                                                </div>
+                                            ) : (
+                                                <form onSubmit={handleFeedbackSubmit} className="space-y-4">
+                                                    {/* Star rating picker */}
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="text-xs text-white/50">Your Rating:</span>
+                                                        <div className="flex items-center gap-1">
+                                                            {[1, 2, 3, 4, 5].map((s) => (
+                                                                <button
+                                                                    key={s}
+                                                                    type="button"
+                                                                    onClick={() => setRating(s)}
+                                                                    className="p-0.5 hover:scale-110 active:scale-95 transition-all duration-200"
+                                                                >
+                                                                    <Star
+                                                                        className={cn(
+                                                                            "w-5 h-5 transition-colors",
+                                                                            s <= rating
+                                                                                ? "fill-indigo-400 text-indigo-400"
+                                                                                : "text-white/20 hover:text-indigo-400/50"
+                                                                        )}
+                                                                    />
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Text comment field */}
+                                                    <div className="relative">
+                                                        <textarea
+                                                            value={comment}
+                                                            onChange={(e) => setComment(e.target.value)}
+                                                            placeholder="What did you like about this event? Share your thoughts..."
+                                                            rows={3}
+                                                            required
+                                                            maxLength={500}
+                                                            className="w-full bg-[#0E1322]/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50 transition-all duration-300 resize-none"
+                                                        />
+                                                    </div>
+
+                                                    {errorMessage && (
+                                                        <div className="text-red-400 text-xs font-medium">
+                                                            {errorMessage}
+                                                        </div>
+                                                    )}
+
+                                                    {successMessage && (
+                                                        <div className="text-emerald-400 text-xs font-medium">
+                                                            {successMessage}
+                                                        </div>
+                                                    )}
+
+                                                    <div className="flex justify-end">
+                                                        <Button
+                                                            type="submit"
+                                                            disabled={submitting || !comment.trim()}
+                                                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 hover:shadow-[0_0_15px_rgba(99,102,241,0.3)] transition-all duration-300"
+                                                        >
+                                                            {submitting ? (
+                                                                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                            ) : (
+                                                                <>
+                                                                    <Send className="w-3.5 h-3.5" />
+                                                                    Submit Feedback
+                                                                </>
+                                                            )}
+                                                        </Button>
+                                                    </div>
+                                                </form>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         {/* Right Column: Sidebar */}
@@ -165,18 +410,22 @@ export function EventDetailsModal({
                                 {/* Action Button */}
                                 {!isAdmin ? (
                                     <Button
-                                        onClick={() => setShowConfirm(true)}
-                                        disabled={isSoldOut && !isRegistered}
+                                        onClick={() => {
+                                            if (!hasEventEnded) setShowConfirm(true);
+                                        }}
+                                        disabled={(isSoldOut && !isRegistered) || hasEventEnded}
                                         className={cn(
                                             "w-full py-6 text-base font-semibold transition-all duration-300",
-                                            isRegistered
-                                                ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 hover:shadow-[0_0_20px_rgba(239,68,68,0.2)]"
-                                                : isSoldOut
-                                                    ? "bg-white/5 text-white/30 cursor-not-allowed"
-                                                    : "bg-indigo-600 hover:bg-indigo-500 text-white hover:shadow-[0_0_20px_rgba(99,102,241,0.4)]"
+                                            hasEventEnded
+                                                ? "bg-indigo-500/10 text-indigo-300/70 border border-indigo-500/20 cursor-not-allowed"
+                                                : isRegistered
+                                                    ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 hover:shadow-[0_0_20px_rgba(239,68,68,0.2)]"
+                                                    : isSoldOut
+                                                        ? "bg-white/5 text-white/30 cursor-not-allowed"
+                                                        : "bg-indigo-600 hover:bg-indigo-500 text-white hover:shadow-[0_0_20px_rgba(99,102,241,0.4)]"
                                         )}
                                     >
-                                        {isRegistered ? "Leave Event" : isSoldOut ? "Sold Out" : "Register Now"}
+                                        {hasEventEnded ? "Event Ended" : isRegistered ? "Leave Event" : isSoldOut ? "Sold Out" : "Register Now"}
                                     </Button>
                                 ) : (
                                     <div className="w-full py-3 px-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm text-center font-medium">

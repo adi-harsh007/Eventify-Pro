@@ -74,6 +74,16 @@ router.post('/', authenticate, async (req, res) => {
         }
 
         const event = events[0];
+
+        // Block registration for completed events
+        const [eventDateRows] = await conn.query('SELECT date, time FROM events WHERE id = ?', [eventId]);
+        const eventDateTime = new Date(`${eventDateRows[0].date}T${eventDateRows[0].time}`);
+        if (eventDateTime <= new Date()) {
+            await conn.rollback();
+            conn.release();
+            return res.status(400).json({ message: 'This event has already ended. Registration is closed.' });
+        }
+
         if (event.registered_count >= event.capacity) {
             await conn.rollback();
             conn.release();

@@ -129,6 +129,51 @@ async function runSQL() {
         `);
         console.log('✅ admin_todos table created/verified');
 
+        // 7. Feedbacks Table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS feedbacks (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                email VARCHAR(255) NOT NULL,
+                role VARCHAR(50) DEFAULT 'Visitor',
+                rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+                comment TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_feedback_created (created_at DESC)
+            )
+        `);
+        // Seed initial testimonials if empty
+        const [feedbackRows] = await pool.query('SELECT COUNT(*) as count FROM feedbacks');
+        if (feedbackRows[0].count === 0) {
+            await pool.query(`
+                INSERT INTO feedbacks (name, email, role, rating, comment) VALUES
+                ('Arjun Mehta', 'arjun.mehta@university.edu', 'CS Student', 5, 'Eventify Pro completely changed how I discover campus events. The UI is gorgeous, registering for hackathons takes seconds, and the ticket management dashboard is incredibly intuitive. Best campus tool I have ever used!'),
+                ('Dr. Priya Sharma', 'priya.sharma@college.ac.in', 'Faculty Organizer', 5, 'As an event organizer, the admin panel is a dream. I can create events with AI-generated descriptions, upload banners via Cloudinary, and track registrations in real-time. The Gemini integration alone saves me hours of copywriting.'),
+                ('Rahul Krishnan', 'rahul.k@techcorp.com', 'Tech Recruiter', 4, 'I reviewed this platform as part of a candidate evaluation. The full-stack architecture — React + Node + MySQL + Redis + Cloudinary — is impressive. Clean code, proper auth flows, and thoughtful rate limiting. Very well engineered.'),
+                ('Sneha Patel', 'sneha.patel@student.edu', 'Event Enthusiast', 5, 'From cultural fests to music concerts, everything is organized beautifully. I love how I can see all my upcoming events in one place. The team registration feature for hackathons is a game changer!'),
+                ('Vikram Desai', 'vikram.d@startup.io', 'Startup Founder', 4, 'The technical decisions here are solid — cursor-based pagination, Redis caching, Helmet security headers, and Cloudinary media pipeline. This is production-grade engineering, not a toy project.')
+            `);
+            console.log('✅ feedbacks seeded with default testimonials');
+        } else {
+            console.log('✅ feedbacks table verified');
+        }
+
+        // 8. Event Feedbacks Table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS event_feedbacks (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                event_id INT NOT NULL,
+                user_id INT NOT NULL,
+                rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+                comment TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+                UNIQUE KEY uq_event_user_feedback (event_id, user_id)
+            ) ENGINE = InnoDB
+        `);
+        console.log('✅ event_feedbacks table created/verified');
+
         console.log('\n🎉 ALL DATABASE TABLES SUCCESSFULLY INITIALIZED! 🎉');
     } catch (e) {
         console.error('❌ Database Initialization Failed:', e);

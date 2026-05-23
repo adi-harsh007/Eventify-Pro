@@ -1,0 +1,188 @@
+<svg width="680" height="460" viewBox="0 0 680 460" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>Playful animated EventBot chatbot logo</title>
+  <desc>A bubbly, textured chatbot mascot with wobbly body, expressive eyes, confetti, zigzag patterns, and a fun retro feel for a college event hosting website.</desc>
+
+  <defs>
+    <radialGradient id="bodyG" cx="48%" cy="42%" r="58%">
+      <stop offset="0%" stop-color="#FAC775"/>
+      <stop offset="60%" stop-color="#EF9F27"/>
+      <stop offset="100%" stop-color="#BA7517"/>
+    </radialGradient>
+    <radialGradient id="faceG" cx="45%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#FAEEDA"/>
+      <stop offset="100%" stop-color="#FAC775"/>
+    </radialGradient>
+    <radialGradient id="eyeWhiteG" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#EAF3DE"/>
+    </radialGradient>
+    <radialGradient id="pupilG" cx="32%" cy="32%" r="60%">
+      <stop offset="0%" stop-color="#3C3489"/>
+      <stop offset="100%" stop-color="#26215C"/>
+    </radialGradient>
+    <radialGradient id="glowG" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FAC775" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#EF9F27" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="shadowG" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#BA7517" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#BA7517" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="dotPattern" x="0" y="0" width="16" height="16" patternUnits="userSpaceOnUse">
+      <circle cx="8" cy="8" r="2" fill="#BA7517" opacity="0.18"/>
+    </pattern>
+    <pattern id="zigzag" x="0" y="0" width="24" height="12" patternUnits="userSpaceOnUse">
+      <polyline points="0,12 12,0 24,12" fill="none" stroke="#EF9F27" stroke-width="2.5" opacity="0.35"/>
+    </pattern>
+    <pattern id="crosshatch" x="0" y="0" width="12" height="12" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="12" y2="12" stroke="#7F77DD" stroke-width="1" opacity="0.2"/>
+      <line x1="12" y1="0" x2="0" y2="12" stroke="#7F77DD" stroke-width="1" opacity="0.2"/>
+    </pattern>
+  </defs>
+
+  <style>
+    .bob { animation: bob 2.8s cubic-bezier(.45,.05,.55,.95) infinite; transform-origin:340px 240px; }
+    @keyframes bob { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-13px) rotate(1.5deg)} }
+
+    .squish { animation: squish 2.8s cubic-bezier(.45,.05,.55,.95) infinite; transform-origin:340px 310px; }
+    @keyframes squish { 0%,100%{transform:scaleX(1) scaleY(1)} 50%{transform:scaleX(1.04) scaleY(0.96)} }
+
+    .blink { animation: blink 3.5s ease-in-out infinite; transform-origin:340px 230px; }
+    @keyframes blink { 0%,82%,92%,100%{transform:scaleY(1)} 87%{transform:scaleY(0.07)} }
+
+    .pupil-wander { animation: wander 5s ease-in-out infinite; }
+    @keyframes wander { 0%,100%{transform:translate(0,0)} 25%{transform:translate(3px,-2px)} 50%{transform:translate(-2px,2px)} 75%{transform:translate(2px,3px)} }
+
+    .antenna-bounce { animation: antBounce 2.8s ease-in-out infinite; transform-origin:340px 148px; }
+    @keyframes antBounce { 0%,100%{transform:scale(1) rotate(0deg)} 30%{transform:scale(1.4) rotate(-8deg)} 60%{transform:scale(1.2) rotate(6deg)} }
+
+    .ear-wiggle-l { animation: earL 2.8s ease-in-out infinite; transform-origin:216px 245px; }
+    @keyframes earL { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(-10deg)} }
+
+    .ear-wiggle-r { animation: earR 2.8s ease-in-out infinite; transform-origin:464px 245px; }
+    @keyframes earR { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(10deg)} }
+
+    .mouth-bounce { animation: mBounce 2.8s ease-in-out infinite; transform-origin:340px 300px; }
+    @keyframes mBounce { 0%,100%{transform:scaleX(1)} 50%{transform:scaleX(1.12)} }
+
+    .bubble-dot1 { animation: dp 1.2s ease-in-out infinite; }
+    .bubble-dot2 { animation: dp 1.2s ease-in-out infinite 0.2s; }
+    .bubble-dot3 { animation: dp 1.2s ease-in-out infinite 0.4s; }
+    @keyframes dp { 0%,100%{transform:translateY(0);opacity:0.45} 50%{transform:translateY(-5px);opacity:1} }
+
+    .star-spin { animation: starSpin 6s linear infinite; transform-origin:160px 160px; }
+    @keyframes starSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+    .confetti-a { animation: cA 3.5s ease-in-out infinite; }
+    @keyframes cA { 0%,100%{transform:translate(0,0) rotate(0deg)} 50%{transform:translate(-8px,-18px) rotate(25deg)} }
+    .confetti-b { animation: cB 4.2s ease-in-out infinite; }
+    @keyframes cB { 0%,100%{transform:translate(0,0) rotate(0deg)} 50%{transform:translate(10px,-14px) rotate(-20deg)} }
+    .confetti-c { animation: cC 3s ease-in-out infinite; }
+    @keyframes cC { 0%,100%{transform:translate(0,0)} 50%{transform:translate(6px,-20px) rotate(35deg)} }
+    .confetti-d { animation: cD 4.8s ease-in-out infinite; }
+    @keyframes cD { 0%,100%{transform:translate(0,0) rotate(0deg)} 50%{transform:translate(-5px,-16px) rotate(-30deg)} }
+
+    .blush-pulse { animation: blushP 2.8s ease-in-out infinite; }
+    @keyframes blushP { 0%,100%{opacity:0.4} 50%{opacity:0.65} }
+
+    .tagline { animation: slideUp 0.9s cubic-bezier(.22,1,.36,1) forwards; opacity:0; }
+    @keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+    .shadow-pulse { animation: sP 2.8s ease-in-out infinite; transform-origin:340px 380px; }
+    @keyframes sP { 0%,100%{transform:scaleX(1);opacity:0.18} 50%{transform:scaleX(0.82);opacity:0.1} }
+  </style>
+
+  <rect x="80" y="60" width="520" height="320" rx="40" fill="url(#dotPattern)" opacity="0.7"/>
+
+  <g class="confetti-a"><rect x="148" y="148" width="14" height="14" rx="3" fill="#D4537E" opacity="0.85"/></g>
+  <g class="confetti-b"><rect x="505" y="138" width="12" height="12" rx="2" fill="#1D9E75" opacity="0.8"/></g>
+  <g class="confetti-c"><rect x="180" y="300" width="10" height="10" rx="2" fill="#7F77DD" opacity="0.75"/></g>
+  <g class="confetti-d"><rect x="490" y="295" width="13" height="13" rx="3" fill="#D85A30" opacity="0.8"/></g>
+  <g class="confetti-b" style="animation-delay:1s"><circle cx="540" cy="200" r="7" fill="#FAC775" opacity="0.8"/></g>
+  <g class="confetti-a" style="animation-delay:0.5s"><circle cx="148" cy="230" r="6" fill="#5DCAA5" opacity="0.75"/></g>
+  <g class="confetti-c" style="animation-delay:0.8s"><polygon points="530,310 537,326 521,326" fill="#534AB7" opacity="0.8"/></g>
+  <g class="confetti-d" style="animation-delay:0.3s"><polygon points="155,320 162,336 146,336" fill="#EF9F27" opacity="0.8"/></g>
+
+  <g class="star-spin">
+    <polygon points="160,138 163,150 175,150 165,157 169,169 160,162 151,169 155,157 145,150 157,150" fill="#FAC775" opacity="0.9"/>
+  </g>
+  <g style="animation:starSpin 8s linear infinite reverse;transform-origin:520px 175px">
+    <polygon points="520,153 524,165 536,165 527,172 530,184 520,177 510,184 513,172 504,165 516,165" fill="#5DCAA5" opacity="0.85"/>
+  </g>
+
+  <ellipse cx="340" cy="382" rx="115" ry="14" fill="url(#shadowG)" class="shadow-pulse"/>
+
+  <g class="bob">
+    <ellipse cx="340" cy="248" rx="148" ry="148" fill="url(#glowG)"/>
+
+    <g class="ear-wiggle-l">
+      <rect x="192" y="215" width="46" height="60" rx="23" fill="url(#bodyG)"/>
+      <rect x="192" y="215" width="46" height="60" rx="23" fill="url(#zigzag)"/>
+      <rect x="202" y="228" width="26" height="34" rx="13" fill="#FAEEDA" opacity="0.55"/>
+    </g>
+    <g class="ear-wiggle-r">
+      <rect x="442" y="215" width="46" height="60" rx="23" fill="url(#bodyG)"/>
+      <rect x="442" y="215" width="46" height="60" rx="23" fill="url(#zigzag)"/>
+      <rect x="452" y="228" width="26" height="34" rx="13" fill="#FAEEDA" opacity="0.55"/>
+    </g>
+
+    <rect x="337" y="148" width="6" height="40" rx="3" fill="#BA7517"/>
+    <g class="antenna-bounce">
+      <circle cx="340" cy="148" r="13" fill="#D4537E"/>
+      <circle cx="340" cy="148" r="8" fill="#F4C0D1"/>
+      <circle cx="337" cy="145" r="3" fill="white" opacity="0.7"/>
+    </g>
+
+    <g class="squish">
+      <rect x="218" y="188" width="244" height="188" rx="52" fill="url(#bodyG)"/>
+      <rect x="218" y="188" width="244" height="188" rx="52" fill="url(#dotPattern)"/>
+      <rect x="218" y="310" width="244" height="66" rx="0" fill="url(#crosshatch)"/>
+      <rect x="238" y="198" width="204" height="168" rx="40" fill="url(#faceG)"/>
+
+      <ellipse cx="262" cy="295" rx="22" ry="14" fill="#ED93B1" opacity="0.4" class="blush-pulse"/>
+      <ellipse cx="418" cy="295" rx="22" ry="14" fill="#ED93B1" opacity="0.4" class="blush-pulse"/>
+
+      <g class="blink">
+        <ellipse cx="295" cy="255" rx="32" ry="34" fill="url(#eyeWhiteG)"/>
+        <ellipse cx="385" cy="255" rx="32" ry="34" fill="url(#eyeWhiteG)"/>
+        <ellipse cx="295" cy="255" rx="32" ry="34" fill="none" stroke="#EF9F27" stroke-width="2.5"/>
+        <ellipse cx="385" cy="255" rx="32" ry="34" fill="none" stroke="#EF9F27" stroke-width="2.5"/>
+        <g class="pupil-wander">
+          <circle cx="295" cy="257" r="16" fill="url(#pupilG)"/>
+          <circle cx="295" cy="257" r="8" fill="#534AB7"/>
+          <circle cx="289" cy="251" r="5" fill="white" opacity="0.9"/>
+          <circle cx="299" cy="263" r="2.5" fill="white" opacity="0.5"/>
+        </g>
+        <g class="pupil-wander" style="animation-delay:0.3s">
+          <circle cx="385" cy="257" r="16" fill="url(#pupilG)"/>
+          <circle cx="385" cy="257" r="8" fill="#534AB7"/>
+          <circle cx="379" cy="251" r="5" fill="white" opacity="0.9"/>
+          <circle cx="389" cy="263" r="2.5" fill="white" opacity="0.5"/>
+        </g>
+        <path d="M268 224 Q283 216 308 221" stroke="#BA7517" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+        <path d="M358 221 Q378 215 400 223" stroke="#BA7517" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+      </g>
+
+      <g class="mouth-bounce">
+        <path d="M295 308 Q340 338 385 308" stroke="#BA7517" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+        <path d="M308 314 Q340 332 372 314 Q340 330 308 314" fill="#FAEEDA" opacity="0.6"/>
+      </g>
+    </g>
+
+    <path d="M218 358 l16,-10 l16,10 l16,-10 l16,10 l16,-10 l16,10 l16,-10 l16,10 l16,-10 l16,10 l16,-10 l16,10 l16,-10" stroke="#BA7517" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <g transform="translate(388,130)">
+    <rect x="0" y="0" width="130" height="52" rx="18" fill="#EEEDFE" stroke="#7F77DD" stroke-width="2"/>
+    <path d="M18 52 L4 70 L34 52" fill="#EEEDFE" stroke="#7F77DD" stroke-width="2" stroke-linejoin="round"/>
+    <line x1="18" y1="52" x2="34" y2="52" stroke="#EEEDFE" stroke-width="3"/>
+    <g transform="translate(65,26)">
+      <circle cx="-22" cy="0" r="5.5" fill="#7F77DD" class="bubble-dot1"/>
+      <circle cx="0" cy="0" r="5.5" fill="#D4537E" class="bubble-dot2"/>
+      <circle cx="22" cy="0" r="5.5" fill="#1D9E75" class="bubble-dot3"/>
+    </g>
+  </g>
+
+  <text x="340" y="410" text-anchor="middle" font-family="Georgia, serif" font-size="26" font-weight="700" fill="#BA7517" letter-spacing="4" class="tagline" style="animation-delay:0.2s">EVENTBOT</text>
+  <text x="340" y="436" text-anchor="middle" font-family="Georgia, serif" font-size="12" fill="#EF9F27" letter-spacing="6" class="tagline" style="animation-delay:0.55s">YOUR CAMPUS HYPE MACHINE</text>
+</svg>

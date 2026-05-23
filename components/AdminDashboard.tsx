@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { EventItem, Registration, User } from '../types';
+import { EventItem, Registration, User, FeedbackItem } from '../types';
 import BentoItem from './ui/scrapbook-bento-grid';
 import {
     apiAdminGetEvents,
@@ -10,7 +10,9 @@ import {
     apiAdminGetTodos,
     apiAdminCreateTodo,
     apiAdminUpdateTodo,
-    apiAdminDeleteTodo
+    apiAdminDeleteTodo,
+    apiAdminGetFeedback,
+    apiAdminDeleteFeedback
 } from '../apiService';
 import MegaEventPage from './MegaEventPage';
 
@@ -22,6 +24,7 @@ interface AdminDashboardProps {
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onEditEvent }) => {
     const [events, setEvents] = useState<EventItem[]>([]);
     const [users, setUsers] = useState<User[]>([]);
+    const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
     const [todos, setTodos] = useState<{ id: number, text: string, completed: boolean }[]>([]);
     const [newTodoText, setNewTodoText] = useState('');
     const [selectedEventRegs, setSelectedEventRegs] = useState<Registration[]>([]);
@@ -30,9 +33,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onEditEven
     const [error, setError] = useState('');
 
     // View Management State
-    const [activeView, setActiveView] = useState<'dashboard' | 'events' | 'users' | 'mega_event' | 'todos'>(() => {
+    const [activeView, setActiveView] = useState<'dashboard' | 'events' | 'users' | 'mega_event' | 'todos' | 'feedback'>(() => {
         const saved = localStorage.getItem('adminActiveView');
-        return saved ? (saved as 'dashboard' | 'events' | 'users' | 'mega_event' | 'todos') : 'dashboard';
+        return saved ? (saved as 'dashboard' | 'events' | 'users' | 'mega_event' | 'todos' | 'feedback') : 'dashboard';
     });
 
     // Persist active view state on change
@@ -43,14 +46,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onEditEven
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [eventsData, usersData, todosData] = await Promise.all([
+            const [eventsData, usersData, todosData, feedbackData] = await Promise.all([
                 apiAdminGetEvents(),
                 apiAdminGetUsers(),
-                apiAdminGetTodos()
+                apiAdminGetTodos(),
+                apiAdminGetFeedback()
             ]);
             setEvents(eventsData);
             setUsers(usersData);
             setTodos(todosData);
+            setFeedbackList(feedbackData);
         } catch (err: any) {
             setError(err.message || 'Failed to load admin data');
         } finally {
@@ -124,6 +129,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onEditEven
             setTodos(todos.filter(t => t.id !== id));
         } catch (err: any) {
             setError(err.message || 'Failed to delete to-do');
+        }
+    };
+
+    const handleDeleteFeedback = async (id: number) => {
+        if (!confirm('Are you sure you want to delete this feedback?')) return;
+        try {
+            await apiAdminDeleteFeedback(id);
+            setFeedbackList(feedbackList.filter(f => f.id !== id));
+        } catch (err: any) {
+            setError(err.message || 'Failed to delete feedback');
         }
     };
 
@@ -241,7 +256,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onEditEven
                         </BentoItem>
                     </div>
 
-                    <div className="md:col-span-2 lg:col-span-1 cursor-pointer h-full" onClick={() => setActiveView('mega_event')}>
+                    <div className="md:col-span-2 lg:col-span-1 cursor-pointer h-full" onClick={() => setActiveView('feedback')}>
+                        <BentoItem rotation="0.5deg" className="border-pink-500/30 bg-gradient-to-tr from-[#161E2E] to-pink-900/10 hover:border-pink-500/60 h-full flex items-center justify-center group">
+                            <div className="text-center p-4">
+                                <h3 className="text-2xl font-bold text-white group-hover:text-pink-400 transition-colors">Event Feedback →</h3>
+                                <p className="text-sm text-muted-foreground mt-2">Review what attendees are saying ({feedbackList.length} reviews).</p>
+                            </div>
+                        </BentoItem>
+                    </div>
+
+                    <div className="md:col-span-2 lg:col-span-2 cursor-pointer h-full" onClick={() => setActiveView('mega_event')}>
                         <BentoItem rotation="1.5deg" className="border-violet-500/30 bg-gradient-to-tr from-[#161E2E] to-violet-900/10 hover:border-violet-500/60 h-full flex items-center justify-center group">
                             <div className="text-center p-4">
                                 <h3 className="text-2xl font-bold text-white group-hover:text-violet-400 transition-colors">Mega Event →</h3>
@@ -439,6 +463,53 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser, onEditEven
                         <div className="absolute top-0 w-full z-20 pointer-events-none bg-gradient-to-b from-[#0B0F19] to-transparent h-4" />
                         <div className="relative z-10 -m-8 scale-[0.98]">
                             <MegaEventPage user={currentUser} />
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* FEEDBACK VIEW */}
+            {activeView === 'feedback' && (
+                <div className="animate-in slide-in-from-bottom-4 duration-500">
+                    <div className="overflow-hidden rounded-[20px] border border-[rgba(255,255,255,0.08)] bg-[#161E2E] shadow-lg">
+                        <div className="border-b border-[rgba(255,255,255,0.08)] px-6 py-4">
+                            <h3 className="text-lg font-semibold text-white">Event Feedback ({feedbackList.length})</h3>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm text-left">
+                                <thead>
+                                    <tr className="border-b border-[rgba(255,255,255,0.08)] bg-black/20 text-xs uppercase tracking-wider text-muted-foreground">
+                                        {['User', 'Event', 'Rating', 'Comment', 'Date', 'Actions'].map(h => (
+                                            <th key={h} className="px-6 py-3 font-semibold">{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {feedbackList.map(f => (
+                                        <tr key={f.id} className="border-b border-[rgba(255,255,255,0.04)] transition-colors hover:bg-white/5">
+                                            <td className="px-6 py-4">
+                                                <div className="font-medium text-white">{f.user_name}</div>
+                                                <div className="text-xs text-muted-foreground">{f.user_email}</div>
+                                            </td>
+                                            <td className="px-6 py-4 text-white font-medium max-w-[200px] truncate">{f.event_title}</td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex gap-1 text-amber-400">
+                                                    {[1, 2, 3, 4, 5].map((star) => (
+                                                        <svg key={star} className={`w-4 h-4 ${star <= f.rating ? 'fill-current' : 'text-zinc-600'}`} viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                                    ))}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-muted-foreground max-w-[300px] truncate" title={f.comment}>{f.comment}</td>
+                                            <td className="px-6 py-4 text-muted-foreground whitespace-nowrap">{new Date(f.created_at).toLocaleDateString()}</td>
+                                            <td className="px-6 py-4">
+                                                <button onClick={() => handleDeleteFeedback(f.id)} className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-400 transition-all duration-300 hover:scale-105 hover:bg-red-500/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.5)]">Delete</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {feedbackList.length === 0 && (
+                                        <tr><td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: '#a1a1aa' }}>No feedback available.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>

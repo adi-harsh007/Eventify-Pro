@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { EventItem, Registration, User } from '../types';
-import { Search, SlidersHorizontal, Plus, Ticket, ChevronRight, ChevronDown } from 'lucide-react';
+import { Search, SlidersHorizontal, Plus, Ticket, ChevronRight } from 'lucide-react';
 import { EventCard } from './ui/event-card';
 import { ParticleTextEffect } from './ui/particle-text-effect';
 import { CalendarView } from './ui/calendar-view';
@@ -80,21 +80,53 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
       .map(r => r.event_id)
   );
 
-  // Filter logic
-  const filtered = events.filter(event => {
-    const matchesSearch =
-      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDept = selectedDept === 'All' || event.department === selectedDept;
-    if (viewMode === 'tickets') return myRegEventIds.has(event.id) && matchesSearch && matchesDept;
-    return matchesSearch && matchesDept;
-  });
+  const now = React.useMemo(() => new Date(), []);
 
-  // Group events by department (for Netflix rows)
-  const deptGroups = DEPARTMENTS
-    .map(dept => ({ dept, events: events.filter(e => e.department === dept) }))
-    .filter(g => g.events.length > 0);
+  const isEventPast = React.useCallback((event: EventItem) => {
+    if (!event.date) return false;
+    try {
+      const eventDateTime = new Date(`${event.date}T${event.time}`);
+      return eventDateTime <= now;
+    } catch {
+      return false;
+    }
+  }, [now]);
+
+  const upcomingEvents = React.useMemo(() => events.filter(e => !isEventPast(e)), [events, isEventPast]);
+  const completedEvents = React.useMemo(() => events.filter(e => isEventPast(e)), [events, isEventPast]);
+
+  // Filter upcoming
+  const filteredUpcoming = React.useMemo(() => {
+    return upcomingEvents.filter(event => {
+      const matchesSearch =
+        event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        event.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        event.category.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesDept = selectedDept === 'All' || event.department === selectedDept;
+      if (viewMode === 'tickets') return myRegEventIds.has(event.id) && matchesSearch && matchesDept;
+      return matchesSearch && matchesDept;
+    });
+  }, [upcomingEvents, searchTerm, selectedDept, viewMode, myRegEventIds]);
+
+  // Filter completed
+  const filteredCompleted = React.useMemo(() => {
+    return completedEvents.filter(event => {
+      const matchesSearch =
+        event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        event.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        event.category.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesDept = selectedDept === 'All' || event.department === selectedDept;
+      if (viewMode === 'tickets') return myRegEventIds.has(event.id) && matchesSearch && matchesDept;
+      return matchesSearch && matchesDept;
+    });
+  }, [completedEvents, searchTerm, selectedDept, viewMode, myRegEventIds]);
+
+  // Group upcoming events by department (for Netflix rows)
+  const deptGroups = React.useMemo(() => {
+    return DEPARTMENTS
+      .map(dept => ({ dept, events: upcomingEvents.filter(e => e.department === dept) }))
+      .filter(g => g.events.length > 0);
+  }, [upcomingEvents]);
 
   const isFiltering = searchTerm.trim() !== '' || selectedDept !== 'All';
   const firstName = currentUser?.name?.split(' ')[0] || 'there';
@@ -107,7 +139,8 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
           style={{ background: 'radial-gradient(ellipse 90% 60% at 50% -5%, #111827 0%, transparent 65%)' }} />
         <div className="relative z-10 mx-auto max-w-7xl px-6 py-12">
           <TicketsContent
-            displayedEvents={filtered}
+            upcomingEvents={filteredUpcoming}
+            completedEvents={filteredCompleted}
             myRegEventIds={myRegEventIds}
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
@@ -115,7 +148,6 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
             setSelectedDept={setSelectedDept}
             onJoinEvent={onJoinEvent}
             onLeaveEvent={onLeaveEvent}
-            firstName={firstName}
             onEventClick={setSelectedEventDetails}
           />
         </div>
@@ -163,12 +195,12 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
             <span className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium"
               style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', color: '#94A3B8' }}>
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              {events.length} Events on Campus
+              {upcomingEvents.length} Active Events
             </span>
             <span className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium"
               style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', color: '#94A3B8' }}>
               <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
-              {deptGroups.length} Departments Active
+              {completedEvents.length} Completed Events
             </span>
             <span className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium"
               style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', color: '#94A3B8' }}>
@@ -303,34 +335,72 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
 
           {/* ── Content ── */}
           {isFiltering ? (
-            filtered.length === 0
-              ? <EmptyState onClear={() => { setSearchTerm(''); setSelectedDept('All'); }} />
-              : <>
-                <div className="mb-6 flex items-center gap-4">
-                  <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.04)' }} />
-                  <span className="text-xs font-medium" style={{ color: '#94A3B8' }}>{filtered.length} results</span>
-                  <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.04)' }} />
-                </div>
-                <EventGrid events={filtered} myRegEventIds={myRegEventIds} onJoinEvent={onJoinEvent} onLeaveEvent={onLeaveEvent} onEventClick={setSelectedEventDetails} />
-              </>
-          ) : events.length === 0
-            ? <EmptyState onClear={undefined} />
-            : (
-              <div className="space-y-16 pb-20">
-                {deptGroups.map(({ dept, events: deptEvents }) => (
-                  <DeptRow
-                    key={dept}
-                    dept={dept}
-                    events={deptEvents}
-                    myRegEventIds={myRegEventIds}
-                    onJoinEvent={onJoinEvent}
-                    onLeaveEvent={onLeaveEvent}
-                    onEventClick={setSelectedEventDetails}
-                  />
-                ))}
+            filteredUpcoming.length === 0 && filteredCompleted.length === 0 ? (
+              <EmptyState onClear={() => { setSearchTerm(''); setSelectedDept('All'); }} />
+            ) : (
+              <div className="space-y-12">
+                {filteredUpcoming.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-white/90 mb-4 flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                      Active Events ({filteredUpcoming.length})
+                    </h3>
+                    <EventGrid events={filteredUpcoming} myRegEventIds={myRegEventIds} onJoinEvent={onJoinEvent} onLeaveEvent={onLeaveEvent} onEventClick={setSelectedEventDetails} />
+                  </div>
+                )}
+                {filteredCompleted.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-white/95 mb-4 flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-indigo-400" />
+                      Completed Events & Reviews ({filteredCompleted.length})
+                    </h3>
+                    <EventGrid events={filteredCompleted} myRegEventIds={myRegEventIds} onJoinEvent={onJoinEvent} onLeaveEvent={onLeaveEvent} onEventClick={setSelectedEventDetails} />
+                  </div>
+                )}
               </div>
             )
-          }
+          ) : (
+            <div className="space-y-16 pb-20">
+              {upcomingEvents.length === 0 && completedEvents.length === 0 ? (
+                <EmptyState onClear={undefined} />
+              ) : (
+                <>
+                  {/* Upcoming Netflix-style Rows */}
+                  {deptGroups.map(({ dept, events: deptEvents }) => (
+                    <DeptRow
+                      key={dept}
+                      dept={dept}
+                      events={deptEvents}
+                      myRegEventIds={myRegEventIds}
+                      onJoinEvent={onJoinEvent}
+                      onLeaveEvent={onLeaveEvent}
+                      onEventClick={setSelectedEventDetails}
+                    />
+                  ))}
+
+                  {/* Dedicated Completed Events Section */}
+                  {completedEvents.length > 0 && (
+                    <div className="pt-12 mt-12 border-t border-white/5">
+                      <div className="mb-8">
+                        <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
+                          <span className="h-2.5 w-2.5 rounded-full bg-indigo-500 animate-pulse" />
+                          Completed Events & Feedback
+                        </h2>
+                        <p className="text-xs text-white/50 mt-1">Browse past campus events and check out participant reviews.</p>
+                      </div>
+                      <EventGrid
+                        events={completedEvents}
+                        myRegEventIds={myRegEventIds}
+                        onJoinEvent={onJoinEvent}
+                        onLeaveEvent={onLeaveEvent}
+                        onEventClick={setSelectedEventDetails}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
         <EventDetailsModal
           event={selectedEventDetails!}
@@ -403,6 +473,7 @@ const DeptRow: React.FC<{
         {events.map(event => {
           const isJoined = myRegEventIds.has(event.id);
           const isFull = event.registered_count >= event.capacity;
+          const isPast = (() => { try { return new Date(`${event.date}T${event.time}`) <= new Date(); } catch { return false; } })();
           return (
             <div key={event.id} className="shrink-0" style={{ width: 'min(340px, 85vw)', scrollSnapAlign: 'start' }}>
               <EventCard
@@ -414,6 +485,7 @@ const DeptRow: React.FC<{
                 date={formatEventDateTime(event.date, event.time)}
                 isRegistered={isJoined}
                 isSoldOut={isFull && !isJoined}
+                isPastEvent={isPast}
                 isTeamEvent={event.is_team_event}
                 maxTeamSize={event.max_team_size}
                 onToggleRegistration={(teamName) => isJoined ? onLeaveEvent(event.id) : onJoinEvent(event.id, teamName)}
@@ -442,6 +514,7 @@ const EventGrid: React.FC<{
     {events.map(event => {
       const isJoined = myRegEventIds.has(event.id);
       const isFull = event.registered_count >= event.capacity;
+      const isPast = (() => { try { return new Date(`${event.date}T${event.time}`) <= new Date(); } catch { return false; } })();
       return (
         <EventCard
           key={event.id}
@@ -453,6 +526,7 @@ const EventGrid: React.FC<{
           date={formatEventDateTime(event.date, event.time)}
           isRegistered={isJoined}
           isSoldOut={isFull && !isJoined}
+          isPastEvent={isPast}
           isTeamEvent={event.is_team_event}
           maxTeamSize={event.max_team_size}
           onToggleRegistration={(teamName) => isJoined ? onLeaveEvent(event.id) : onJoinEvent(event.id, teamName)}
@@ -466,7 +540,8 @@ const EventGrid: React.FC<{
 
 // ── Tickets Content ──────────────────────────────────────
 const TicketsContent: React.FC<{
-  displayedEvents: EventItem[];
+  upcomingEvents: EventItem[];
+  completedEvents: EventItem[];
   myRegEventIds: Set<number>;
   searchTerm: string;
   setSearchTerm: (v: string) => void;
@@ -474,9 +549,8 @@ const TicketsContent: React.FC<{
   setSelectedDept: (v: 'All' | Department) => void;
   onJoinEvent: (id: number, teamName?: string) => void;
   onLeaveEvent: (id: number) => void;
-  firstName: string;
   onEventClick: (event: EventItem) => void;
-}> = ({ displayedEvents, myRegEventIds, searchTerm, setSearchTerm, selectedDept, setSelectedDept, onJoinEvent, onLeaveEvent, firstName, onEventClick }) => {
+}> = ({ upcomingEvents, completedEvents, myRegEventIds, searchTerm, setSearchTerm, selectedDept, setSelectedDept, onJoinEvent, onLeaveEvent, onEventClick }) => {
   const [showCalendar, setShowCalendar] = React.useState(false);
 
   return (
@@ -490,7 +564,7 @@ const TicketsContent: React.FC<{
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
           }}>My Tickets</h2>
           <p style={{ color: '#94A3B8', fontSize: '15px' }}>
-            {myRegEventIds.size > 0 ? `${myRegEventIds.size} upcoming event${myRegEventIds.size !== 1 ? 's' : ''}` : 'Your booked experiences will appear here.'}
+            {myRegEventIds.size > 0 ? `${myRegEventIds.size} total experience${myRegEventIds.size !== 1 ? 's' : ''}` : 'Your booked experiences will appear here.'}
           </p>
         </div>
 
@@ -601,16 +675,36 @@ const TicketsContent: React.FC<{
       {showCalendar ? (
         <div className="pt-2">
           <CalendarView
-            events={displayedEvents.filter(e => myRegEventIds.has(e.id))}
+            events={upcomingEvents}
           />
         </div>
       ) : (
-        <>
-          {displayedEvents.length === 0
-            ? <EmptyState onClear={(searchTerm || selectedDept !== 'All') ? () => { setSearchTerm(''); setSelectedDept('All'); } : undefined} isTickets />
-            : <EventGrid events={displayedEvents} myRegEventIds={myRegEventIds} onJoinEvent={onJoinEvent} onLeaveEvent={onLeaveEvent} onEventClick={onEventClick} />
-          }
-        </>
+        <div className="space-y-12 pb-16">
+          {upcomingEvents.length === 0 && completedEvents.length === 0 ? (
+            <EmptyState onClear={(searchTerm || selectedDept !== 'All') ? () => { setSearchTerm(''); setSelectedDept('All'); } : undefined} isTickets />
+          ) : (
+            <>
+              {upcomingEvents.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-white/90 mb-4 flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                    Active Bookings ({upcomingEvents.length})
+                  </h3>
+                  <EventGrid events={upcomingEvents} myRegEventIds={myRegEventIds} onJoinEvent={onJoinEvent} onLeaveEvent={onLeaveEvent} onEventClick={onEventClick} />
+                </div>
+              )}
+              {completedEvents.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-white/95 mb-4 flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-indigo-400" />
+                    Completed Events & Memories ({completedEvents.length})
+                  </h3>
+                  <EventGrid events={completedEvents} myRegEventIds={myRegEventIds} onJoinEvent={onJoinEvent} onLeaveEvent={onLeaveEvent} onEventClick={onEventClick} />
+                </div>
+              )}
+            </>
+          )}
+        </div>
       )}
     </div>
   );

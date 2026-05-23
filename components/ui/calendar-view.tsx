@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, X, Calendar as CalendarIcon, Clock, MapPin } from 'lucide-react';
 import { EventItem } from '../../types';
 import { cn } from '../../lib/utils';
-import { ParticleTextEffect } from './particle-text-effect';
+
 
 interface CalendarViewProps {
   events: EventItem[]; // The events that the user is registered for (My Tickets)

@@ -1,4 +1,4 @@
-import { User } from './types';
+
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const API_URL = `${API_BASE}/api`;
@@ -16,7 +16,11 @@ function authHeaders(): Record<string, string> {
 
 async function handleResponse(res: Response) {
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Request failed');
+    if (!res.ok) {
+        const error: any = new Error(data.message || 'Request failed');
+        if (data.limitReached !== undefined) error.limitReached = data.limitReached;
+        throw error;
+    }
     return data;
 }
 
@@ -89,6 +93,13 @@ export const apiGetEvents = async (cursor?: string, limit?: number) => {
     return handleResponse(res);
 };
 
+export const apiGetPublicEvents = async () => {
+    const res = await fetch(`${API_URL}/events/public`, {
+        headers: { 'Content-Type': 'application/json' }
+    });
+    return handleResponse(res);
+};
+
 export const apiUploadImage = async (file: File) => {
     const formData = new FormData();
     formData.append('image', file);
@@ -109,6 +120,16 @@ export const apiGenerateDescription = async (title: string, category: string) =>
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({ title, category }),
+    });
+    return handleResponse(res);
+};
+
+// ── Chatbot ──────────────────────────────────────────
+export const apiSendChatMessage = async (message: string, history: { role: string, text: string }[] = []) => {
+    const res = await fetch(`${API_URL}/ai/chat`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ message, history }),
     });
     return handleResponse(res);
 };
@@ -278,6 +299,56 @@ export const apiAdminUpdateTodo = async (id: number, completed: boolean) => {
 
 export const apiAdminDeleteTodo = async (id: number) => {
     const res = await fetch(`${API_URL}/admin-todos/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+    });
+    return handleResponse(res);
+};
+
+// ── Feedback (Public) ────────────────────────────────
+export const apiGetFeedback = async () => {
+    const res = await fetch(`${API_URL}/feedback`, {
+        headers: { 'Content-Type': 'application/json' }
+    });
+    return handleResponse(res);
+};
+
+export const apiSubmitFeedback = async (data: { name: string; email: string; role: string; rating: number; comment: string }) => {
+    const res = await fetch(`${API_URL}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+};
+
+// ── Event Specific Feedback ───────────────────────────
+export const apiGetEventFeedback = async (eventId: number) => {
+    const res = await fetch(`${API_URL}/events/${eventId}/feedback`, {
+        headers: { 'Content-Type': 'application/json' }
+    });
+    return handleResponse(res);
+};
+
+export const apiSubmitEventFeedback = async (eventId: number, data: { rating: number; comment: string }) => {
+    const res = await fetch(`${API_URL}/events/${eventId}/feedback`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+};
+
+// ── Admin Feedback ─────────────────────────────────────
+export const apiAdminGetFeedback = async () => {
+    const res = await fetch(`${API_URL}/admin/feedback`, {
+        headers: authHeaders(),
+    });
+    return handleResponse(res);
+};
+
+export const apiAdminDeleteFeedback = async (id: number) => {
+    const res = await fetch(`${API_URL}/admin/feedback/${id}`, {
         method: 'DELETE',
         headers: authHeaders(),
     });
