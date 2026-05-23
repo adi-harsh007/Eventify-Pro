@@ -104,7 +104,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                         : `You're about to leave${eventTitle ? ` "${eventTitle}"` : " this event"}. Your spot will be released.`}
                 </p>
 
-                {isJoin && isTeamEvent && (
+                {isJoin && !!isTeamEvent && (
                     <div className="mb-6">
                         <input
                             type="text"

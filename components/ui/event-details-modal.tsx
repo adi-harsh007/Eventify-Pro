@@ -173,7 +173,7 @@ export function EventDetailsModal({
                         <span className="px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-xs font-medium text-white shadow-sm flex items-center gap-1.5">
                             <Building className="w-3.5 h-3.5" /> Dept: {event.department}
                         </span>
-                        {event.is_team_event && (
+                        {!!event.is_team_event && (
                             <span className="px-3 py-1 bg-indigo-500/20 backdrop-blur-md border border-indigo-500/30 rounded-full text-xs font-semibold text-indigo-300 shadow-sm flex items-center gap-1.5">
                                 <Users className="w-3.5 h-3.5" /> Team Event (Max {event.max_team_size})
                             </span>
@@ -444,7 +444,7 @@ export function EventDetailsModal({
                     open={showConfirm}
                     type={isRegistered ? "leave" : "join"}
                     eventTitle={event.title}
-                    isTeamEvent={event.is_team_event}
+                    isTeamEvent={!!event.is_team_event}
                     maxTeamSize={event.max_team_size}
                     onConfirm={(teamName) => {
                         setShowConfirm(false);
