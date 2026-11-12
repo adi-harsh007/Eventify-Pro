@@ -10,8 +10,8 @@ router.use(authenticate, requireAdmin);
 // Get all todos
 router.get('/', async (req, res) => {
     try {
-        const db = await getDB();
-        const [rows] = await db.query('SELECT * FROM admin_todos ORDER BY created_at ASC');
+        const db = getDB();
+        const { rows } = await db.query('SELECT * FROM admin_todos ORDER BY created_at ASC');
         res.json(rows);
     } catch (err) {
         logger.error('Error fetching admin todos:', err);
@@ -27,16 +27,12 @@ router.post('/', async (req, res) => {
     }
 
     try {
-        const db = await getDB();
-        const [result] = await db.query(
-            'INSERT INTO admin_todos (text, completed) VALUES (?, false)',
+        const db = getDB();
+        const { rows } = await db.query(
+            'INSERT INTO admin_todos (text, completed) VALUES ($1, false) RETURNING id, text, completed',
             [text.trim()]
         );
-        res.status(201).json({
-            id: result.insertId,
-            text: text.trim(),
-            completed: false
-        });
+        res.status(201).json(rows[0]);
     } catch (err) {
         logger.error('Error creating admin todo:', err);
         res.status(500).json({ message: 'Internal server error' });
@@ -49,9 +45,9 @@ router.put('/:id', async (req, res) => {
     const { completed } = req.body;
 
     try {
-        const db = await getDB();
+        const db = getDB();
         await db.query(
-            'UPDATE admin_todos SET completed = ? WHERE id = ?',
+            'UPDATE admin_todos SET completed = $1 WHERE id = $2',
             [completed, id]
         );
         res.json({ message: 'Todo updated successfully' });
@@ -66,8 +62,8 @@ router.delete('/:id', async (req, res) => {
     const { id } = req.params;
 
     try {
-        const db = await getDB();
-        await db.query('DELETE FROM admin_todos WHERE id = ?', [id]);
+        const db = getDB();
+        await db.query('DELETE FROM admin_todos WHERE id = $1', [id]);
         res.json({ message: 'Todo deleted successfully' });
     } catch (err) {
         logger.error('Error deleting admin todo:', err);

@@ -12,7 +12,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         const { cursor, limit: rawLimit } = req.query;
-        const limit = Math.min(parseInt(rawLimit) || 20, 50);
+        const limit = Math.min(parseInt(rawLimit, 10) || 20, 50);
 
         const cacheKey = `discovery:cursor:${cursor || 'first'}:limit:${limit}`;
         const cached = await cacheGet(cacheKey);
@@ -25,17 +25,17 @@ router.get('/', async (req, res) => {
         if (cursor) {
             try {
                 const decoded = JSON.parse(Buffer.from(cursor, 'base64').toString('utf-8'));
-                sql += ' WHERE (created_at < ?) OR (created_at = ? AND id < ?)';
-                params.push(decoded.created_at, decoded.created_at, decoded.id);
+                params.push(decoded.created_at, decoded.id);
+                sql += ' WHERE (created_at < $1) OR (created_at = $1 AND id < $2)';
             } catch {
                 // Invalid cursor, ignore
             }
         }
 
-        sql += ' ORDER BY created_at DESC, id DESC LIMIT ?';
         params.push(limit + 1);
+        sql += ` ORDER BY created_at DESC, id DESC LIMIT $${params.length}`;
 
-        const [rows] = await pool.query(sql, params);
+        const { rows } = await pool.query(sql, params);
         const hasMore = rows.length > limit;
         const results = hasMore ? rows.slice(0, limit) : rows;
         const nextCursor = hasMore

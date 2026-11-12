@@ -1,24 +1,36 @@
-const mysql = require('mysql2/promise');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
+const { createPool } = require('./lib/db');
 
 async function run() {
-    try {
-        const pool = mysql.createPool({
-            host: process.env.MYSQL_HOST || 'localhost',
-            port: process.env.MYSQL_PORT || 3306,
-            user: process.env.MYSQL_USER || 'root',
-            password: process.env.MYSQL_PASSWORD,
-            database: process.env.MYSQL_DATABASE || 'eventify_pro',
-            waitForConnections: true,
-            connectionLimit: 10,
-            queueLimit: 0
-        });
+    const pool = createPool();
 
-        console.log('Running migration to update ENUM category...');
+    try {
+        console.log('Running PostgreSQL migration to update category constraint & columns...');
+
+        // Ensure category constraint supports all current categories
         await pool.query(`
-            ALTER TABLE events 
-            MODIFY COLUMN category ENUM(
+            DO $$
+            DECLARE
+                c_name text;
+            BEGIN
+                SELECT conname INTO c_name
+                FROM pg_constraint
+                WHERE conrelid = 'events'::regclass
+                  AND contype = 'c'
+                  AND pg_get_constraintdef(oid) ILIKE '%category%';
+
+                IF c_name IS NOT NULL THEN
+                    EXECUTE format('ALTER TABLE events DROP CONSTRAINT %I', c_name);
+                END IF;
+            END $$;
+        `);
+
+        await pool.query(`
+            ALTER TABLE events
+            ALTER COLUMN category TYPE VARCHAR(50),
+            ALTER COLUMN category SET DEFAULT 'Other',
+            ADD CONSTRAINT events_category_check CHECK (category IN (
                 'Hackathon',
                 'Tech Competition',
                 'Sports Event',
@@ -30,35 +42,26 @@ async function run() {
                 'Webinar',
                 'Social',
                 'Other'
-            ) NOT NULL DEFAULT 'Other';
+            ));
         `);
-        console.log('Migration successful: Updated category ENUM.');
+        console.log('Migration successful: Updated category CHECK constraint.');
 
-        // Ensure image_url is a varchar(500) if not already
         await pool.query(`
             ALTER TABLE events
-            MODIFY COLUMN image_url VARCHAR(500) DEFAULT '';
+            ALTER COLUMN image_url TYPE VARCHAR(500),
+            ALTER COLUMN image_url SET DEFAULT '';
         `);
         console.log('Migration successful: Ensured image_url column is correct.');
 
-        // Ensure department column exists
-        try {
-            await pool.query(`
-                ALTER TABLE events ADD COLUMN department VARCHAR(50) DEFAULT 'General';
-            `);
-            console.log('Migration successful: Added missing department column.');
-        } catch (colErr) {
-            if (colErr.code === 'ER_DUP_FIELDNAME') {
-                console.log('department column already exists.');
-            } else {
-                throw colErr;
-            }
-        }
-
-        process.exit(0);
+        await pool.query(`
+            ALTER TABLE events ADD COLUMN IF NOT EXISTS department VARCHAR(50) DEFAULT 'General';
+        `);
+        console.log('Migration successful: Ensured department column exists.');
     } catch (e) {
         console.error('Migration failed:', e);
-        process.exit(1);
+        process.exitCode = 1;
+    } finally {
+        await pool.end();
     }
 }
 

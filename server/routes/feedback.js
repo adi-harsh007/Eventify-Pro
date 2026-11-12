@@ -18,7 +18,7 @@ const feedbackLimiter = rateLimit({
 router.get('/', async (req, res) => {
     try {
         const pool = getDB();
-        const [rows] = await pool.query(
+        const { rows } = await pool.query(
             'SELECT id, name, role, rating, comment, created_at FROM feedbacks ORDER BY created_at DESC'
         );
         res.json({ feedbacks: rows });
@@ -38,7 +38,7 @@ router.post('/', feedbackLimiter, async (req, res) => {
             return res.status(400).json({ message: 'Name, email, and comment are required.' });
         }
 
-        const parsedRating = parseInt(rating);
+        const parsedRating = parseInt(rating, 10);
         if (isNaN(parsedRating) || parsedRating < 1 || parsedRating > 5) {
             return res.status(400).json({ message: 'Rating must be between 1 and 5.' });
         }
@@ -50,12 +50,12 @@ router.post('/', feedbackLimiter, async (req, res) => {
         const safeComment = String(comment).slice(0, 1000).replace(/[<>]/g, '');
 
         const pool = getDB();
-        const [result] = await pool.query(
-            'INSERT INTO feedbacks (name, email, role, rating, comment) VALUES (?, ?, ?, ?, ?)',
+        const { rows } = await pool.query(
+            `INSERT INTO feedbacks (name, email, role, rating, comment)
+             VALUES ($1, $2, $3, $4, $5)
+             RETURNING id, name, role, rating, comment, created_at`,
             [safeName, safeEmail, safeRole, parsedRating, safeComment]
         );
-
-        const [rows] = await pool.query('SELECT id, name, role, rating, comment, created_at FROM feedbacks WHERE id = ?', [result.insertId]);
 
         logger.info(`Feedback submitted by ${safeName} (${safeEmail})`);
         res.status(201).json({ feedback: rows[0] });

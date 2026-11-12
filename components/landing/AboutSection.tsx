@@ -6,7 +6,7 @@ const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: (i: number) => ({ opaci
 const techStack = [
   { icon: <Cpu className="w-4 h-4" />, label: 'React + TypeScript' },
   { icon: <Zap className="w-4 h-4" />, label: 'Vite + Tailwind v4' },
-  { icon: <Database className="w-4 h-4" />, label: 'MySQL + Redis' },
+  { icon: <Database className="w-4 h-4" />, label: 'PostgreSQL + Redis' },
   { icon: <Cloud className="w-4 h-4" />, label: 'Cloudinary CDN' },
   { icon: <Sparkles className="w-4 h-4" />, label: 'Gemini AI' },
   { icon: <Shield className="w-4 h-4" />, label: 'Helmet + Rate Limiting' },
@@ -43,7 +43,7 @@ export default function AboutSection() {
             A Full-Stack Event <span className="bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">Management Platform</span>
           </motion.h2>
           <motion.p variants={fadeUp} custom={2} className="max-w-2xl mx-auto text-zinc-400 text-base leading-relaxed">
-            Eventify Pro is a production-grade university event management system featuring role-based access control, real-time data from MySQL, Redis caching, Cloudinary media uploads, and Google Gemini AI-powered content generation.
+            Eventify Pro is a production-grade university event management system featuring role-based access control, real-time data from PostgreSQL, Redis caching, Cloudinary media uploads, and Google Gemini AI-powered content generation.
           </motion.p>
         </motion.div>
 
@@ -112,7 +112,7 @@ export default function AboutSection() {
           <div className="flex flex-col sm:flex-row items-center gap-4 justify-center text-center">
             <Calendar className="w-5 h-5 text-amber-400 shrink-0" />
             <p className="text-sm text-zinc-400">
-              <span className="text-white font-medium">Public API:</span> The landing page below fetches <span className="text-amber-400 font-medium">live event data</span> directly from our MySQL database via an unauthenticated <code className="text-xs bg-white/10 px-1.5 py-0.5 rounded">GET /api/events/public</code> endpoint — proving full-stack integration.
+              <span className="text-white font-medium">Public API:</span> The landing page below fetches <span className="text-amber-400 font-medium">live event data</span> directly from our PostgreSQL database via an unauthenticated <code className="text-xs bg-white/10 px-1.5 py-0.5 rounded">GET /api/events/public</code> endpoint — proving full-stack integration.
             </p>
           </div>
         </motion.div>

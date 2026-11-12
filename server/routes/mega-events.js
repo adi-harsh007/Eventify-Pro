@@ -7,8 +7,11 @@ const logger = require('../lib/logger');
 // Get mega event status
 router.get('/status', authenticate, async (req, res) => {
     try {
-        const db = await getDB();
-        const [rows] = await db.query("SELECT status FROM mega_registrations WHERE user_id = ? AND status = 'registered'", [req.user.id]);
+        const db = getDB();
+        const { rows } = await db.query(
+            "SELECT status FROM mega_registrations WHERE user_id = $1 AND status = 'registered'",
+            [req.user.id]
+        );
         res.json({ hasTicket: rows.length > 0 });
     } catch (err) {
         logger.error('Error fetching mega event status:', err);
@@ -19,12 +22,13 @@ router.get('/status', authenticate, async (req, res) => {
 // Register for mega event
 router.post('/register', authenticate, async (req, res) => {
     try {
-        const db = await getDB();
-        await db.query(`
-            INSERT INTO mega_registrations (user_id, status) 
-            VALUES (?, 'registered') 
-            ON DUPLICATE KEY UPDATE status = 'registered'
-        `, [req.user.id]);
+        const db = getDB();
+        await db.query(
+            `INSERT INTO mega_registrations (user_id, status)
+             VALUES ($1, 'registered')
+             ON CONFLICT (user_id) DO UPDATE SET status = 'registered'`,
+            [req.user.id]
+        );
 
         res.json({ message: 'Successfully registered for the Mega Event' });
     } catch (err) {
@@ -36,8 +40,8 @@ router.post('/register', authenticate, async (req, res) => {
 // Get lineup
 router.get('/lineup', authenticate, async (req, res) => {
     try {
-        const db = await getDB();
-        const [rows] = await db.query('SELECT * FROM mega_event_lineup ORDER BY id ASC');
+        const db = getDB();
+        const { rows } = await db.query('SELECT * FROM mega_event_lineup ORDER BY id ASC');
         res.json(rows);
     } catch (err) {
         logger.error('Error fetching lineup:', err);
@@ -54,12 +58,13 @@ router.put('/admin/lineup/:id', authenticate, async (req, res) => {
     const { day_label, title, description, event_date, event_time, icon_name } = req.body;
 
     try {
-        const db = await getDB();
-        await db.query(`
-            UPDATE mega_event_lineup 
-            SET day_label = ?, title = ?, description = ?, event_date = ?, event_time = ?, icon_name = ?
-            WHERE id = ?
-        `, [day_label, title, description, event_date, event_time, icon_name, id]);
+        const db = getDB();
+        await db.query(
+            `UPDATE mega_event_lineup
+             SET day_label = $1, title = $2, description = $3, event_date = $4, event_time = $5, icon_name = $6
+             WHERE id = $7`,
+            [day_label, title, description, event_date || null, event_time || null, icon_name, id]
+        );
 
         res.json({ message: 'Lineup updated successfully' });
     } catch (err) {

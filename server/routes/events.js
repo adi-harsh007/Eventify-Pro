@@ -28,8 +28,8 @@ router.get('/public', async (req, res) => {
     try {
         const pool = getDB();
         // Fetch top 5 upcoming events
-        const [rows] = await pool.query(
-            "SELECT id, title, description, date, time, location, category, image_url FROM events WHERE CONCAT(date, ' ', time) >= NOW() ORDER BY date ASC, time ASC LIMIT 5"
+        const { rows } = await pool.query(
+            'SELECT id, title, description, date, time, location, category, image_url FROM events WHERE (date + time) >= NOW() ORDER BY date ASC, time ASC LIMIT 5'
         );
         res.json({ events: rows });
     } catch (error) {
@@ -42,7 +42,7 @@ router.get('/public', async (req, res) => {
 router.get('/', authenticate, async (req, res) => {
     try {
         const { cursor, limit: rawLimit } = req.query;
-        const limit = Math.min(parseInt(rawLimit) || 20, 50);
+        const limit = Math.min(parseInt(rawLimit, 10) || 20, 50);
 
         const cacheKey = `feed:global:cursor:${cursor || 'first'}:limit:${limit}`;
         const cached = await cacheGet(cacheKey);
@@ -55,15 +55,15 @@ router.get('/', authenticate, async (req, res) => {
         if (cursor) {
             const decoded = decodeCursor(cursor);
             if (decoded) {
-                sql += ' WHERE (created_at < ?) OR (created_at = ? AND id < ?)';
-                params.push(decoded.created_at, decoded.created_at, decoded.id);
+                params.push(decoded.created_at, decoded.id);
+                sql += ' WHERE (created_at < $1) OR (created_at = $1 AND id < $2)';
             }
         }
 
-        sql += ' ORDER BY created_at DESC, id DESC LIMIT ?';
         params.push(limit + 1);
+        sql += ` ORDER BY created_at DESC, id DESC LIMIT $${params.length}`;
 
-        const [rows] = await pool.query(sql, params);
+        const { rows } = await pool.query(sql, params);
         const hasMore = rows.length > limit;
         const results = hasMore ? rows.slice(0, limit) : rows;
         const nextCursor = hasMore ? encodeCursor(results[results.length - 1]) : null;
@@ -88,17 +88,17 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
         }
 
         const pool = getDB();
-        const [result] = await pool.query(
+        const { rows } = await pool.query(
             `INSERT INTO events (title, description, date, time, location, capacity, category, department, image_url, is_team_event, max_team_size, created_by)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+             RETURNING *`,
             [title, description, date, time, location, capacity, category || 'Other', department || 'General', imageUrl || '', is_team_event || false, max_team_size || 1, req.user.id]
         );
 
-        const [rows] = await pool.query('SELECT * FROM events WHERE id = ?', [result.insertId]);
         await cacheInvalidate('feed:*');
         await cacheInvalidate('discovery:*');
 
-        logger.info(`Event created: ${title} (${result.insertId})`);
+        logger.info(`Event created: ${title} (${rows[0].id})`);
         res.status(201).json(rows[0]);
     } catch (error) {
         logger.error('Create event error:', error);
@@ -110,7 +110,7 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
 router.put('/:id', authenticate, async (req, res) => {
     try {
         const pool = getDB();
-        const [rows] = await pool.query('SELECT * FROM events WHERE id = ?', [req.params.id]);
+        const { rows } = await pool.query('SELECT * FROM events WHERE id = $1', [req.params.id]);
         if (rows.length === 0) {
             return res.status(404).json({ message: 'Event not found.' });
         }
@@ -122,19 +122,32 @@ router.put('/:id', authenticate, async (req, res) => {
 
         const { title, description, date, time, location, capacity, category, department, imageUrl, is_team_event, max_team_size } = req.body;
 
-        await pool.query(
-            `UPDATE events SET title = COALESCE(?, title), description = COALESCE(?, description),
-             date = COALESCE(?, date), time = COALESCE(?, time), location = COALESCE(?, location),
-             capacity = COALESCE(?, capacity), category = COALESCE(?, category),
-             department = COALESCE(?, department),
-             image_url = COALESCE(?, image_url),
-             is_team_event = COALESCE(?, is_team_event),
-             max_team_size = COALESCE(?, max_team_size)
-             WHERE id = ?`,
-            [title, description, date, time, location, capacity, category, department, imageUrl, is_team_event, max_team_size, req.params.id]
+        const { rows: updated } = await pool.query(
+            `UPDATE events SET title = COALESCE($1, title), description = COALESCE($2, description),
+             date = COALESCE($3, date), time = COALESCE($4, time), location = COALESCE($5, location),
+             capacity = COALESCE($6, capacity), category = COALESCE($7, category),
+             department = COALESCE($8, department),
+             image_url = COALESCE($9, image_url),
+             is_team_event = COALESCE($10, is_team_event),
+             max_team_size = COALESCE($11, max_team_size)
+             WHERE id = $12
+             RETURNING *`,
+            [
+                title ?? null,
+                description ?? null,
+                date ?? null,
+                time ?? null,
+                location ?? null,
+                capacity ?? null,
+                category ?? null,
+                department ?? null,
+                imageUrl ?? null,
+                is_team_event ?? null,
+                max_team_size ?? null,
+                req.params.id
+            ]
         );
 
-        const [updated] = await pool.query('SELECT * FROM events WHERE id = ?', [req.params.id]);
         await cacheInvalidate('feed:*');
         await cacheInvalidate('discovery:*');
 
@@ -150,7 +163,7 @@ router.put('/:id', authenticate, async (req, res) => {
 router.delete('/:id', authenticate, async (req, res) => {
     try {
         const pool = getDB();
-        const [rows] = await pool.query('SELECT * FROM events WHERE id = ?', [req.params.id]);
+        const { rows } = await pool.query('SELECT * FROM events WHERE id = $1', [req.params.id]);
         if (rows.length === 0) {
             return res.status(404).json({ message: 'Event not found.' });
         }
@@ -160,8 +173,8 @@ router.delete('/:id', authenticate, async (req, res) => {
             return res.status(403).json({ message: 'You can only delete your own events.' });
         }
 
-        await pool.query('DELETE FROM registrations WHERE event_id = ?', [req.params.id]);
-        await pool.query('DELETE FROM events WHERE id = ?', [req.params.id]);
+        await pool.query('DELETE FROM registrations WHERE event_id = $1', [req.params.id]);
+        await pool.query('DELETE FROM events WHERE id = $1', [req.params.id]);
         await cacheInvalidate('feed:*');
         await cacheInvalidate('discovery:*');
 
@@ -177,24 +190,24 @@ router.delete('/:id', authenticate, async (req, res) => {
 router.get('/:id/feedback', async (req, res) => {
     try {
         const pool = getDB();
-        
+
         // Check if event exists and get its date/time
-        const [eventRows] = await pool.query('SELECT date, time FROM events WHERE id = ?', [req.params.id]);
+        const { rows: eventRows } = await pool.query('SELECT date, time FROM events WHERE id = $1', [req.params.id]);
         if (eventRows.length === 0) {
             return res.status(404).json({ message: 'Event not found.' });
         }
-        
+
         const event = eventRows[0];
         const eventDateTime = normalizeEventDateTime(event);
         if (eventDateTime > new Date()) {
             return res.json({ feedbacks: [] }); // Empty array before event ends
         }
 
-        const [rows] = await pool.query(
-            `SELECT ef.id, ef.rating, ef.comment, ef.created_at, u.name as user_name
+        const { rows } = await pool.query(
+            `SELECT ef.id, ef.rating, ef.comment, ef.created_at, u.name AS user_name
              FROM event_feedbacks ef
              JOIN users u ON ef.user_id = u.id
-             WHERE ef.event_id = ?
+             WHERE ef.event_id = $1
              ORDER BY ef.created_at DESC`,
             [req.params.id]
         );
@@ -216,15 +229,15 @@ router.post('/:id/feedback', authenticate, async (req, res) => {
             return res.status(400).json({ message: 'Rating and comment are required.' });
         }
 
-        const parsedRating = parseInt(rating);
+        const parsedRating = parseInt(rating, 10);
         if (isNaN(parsedRating) || parsedRating < 1 || parsedRating > 5) {
             return res.status(400).json({ message: 'Rating must be between 1 and 5.' });
         }
 
         const pool = getDB();
-        
+
         // Check if event exists and get date/time
-        const [eventRows] = await pool.query('SELECT date, time FROM events WHERE id = ?', [eventId]);
+        const { rows: eventRows } = await pool.query('SELECT date, time FROM events WHERE id = $1', [eventId]);
         if (eventRows.length === 0) {
             return res.status(404).json({ message: 'Event not found.' });
         }
@@ -236,8 +249,8 @@ router.post('/:id/feedback', authenticate, async (req, res) => {
         }
 
         // Verify that the user is registered for the event
-        const [regRows] = await pool.query(
-            'SELECT id FROM registrations WHERE event_id = ? AND user_id = ?',
+        const { rows: regRows } = await pool.query(
+            'SELECT id FROM registrations WHERE event_id = $1 AND user_id = $2',
             [eventId, userId]
         );
         if (regRows.length === 0) {
@@ -247,22 +260,22 @@ router.post('/:id/feedback', authenticate, async (req, res) => {
         // Insert new feedback
         try {
             await pool.query(
-                'INSERT INTO event_feedbacks (event_id, user_id, rating, comment) VALUES (?, ?, ?, ?)',
+                'INSERT INTO event_feedbacks (event_id, user_id, rating, comment) VALUES ($1, $2, $3, $4)',
                 [eventId, userId, parsedRating, comment]
             );
         } catch (dbErr) {
-            if (dbErr.code === 'ER_DUP_ENTRY') {
+            if (dbErr.code === '23505') {
                 return res.status(400).json({ message: 'You have already submitted feedback for this event!' });
             }
             throw dbErr;
         }
 
         // Fetch user info for real-time frontend update response
-        const [feedbackRows] = await pool.query(
-            `SELECT ef.id, ef.rating, ef.comment, ef.created_at, u.name as user_name
+        const { rows: feedbackRows } = await pool.query(
+            `SELECT ef.id, ef.rating, ef.comment, ef.created_at, u.name AS user_name
              FROM event_feedbacks ef
              JOIN users u ON ef.user_id = u.id
-             WHERE ef.event_id = ? AND ef.user_id = ?`,
+             WHERE ef.event_id = $1 AND ef.user_id = $2`,
             [eventId, userId]
         );
 

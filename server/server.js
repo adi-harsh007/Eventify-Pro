@@ -5,9 +5,8 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const multer = require('multer'); // Added multer
-const fs = require('fs'); // Added fs
-const jwt = require('jsonwebtoken'); // Added jwt
+const multer = require('multer');
+const jwt = require('jsonwebtoken');
 const { GoogleGenAI } = require('@google/genai');
 
 const logger = require('./lib/logger');
@@ -249,7 +248,6 @@ app.use('/api/mega-events', megaEventsRoutes);
 app.use('/api/admin-todos', adminTodosRoutes);
 app.use('/api/feedback', feedbackRoutes);
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // ── Health check (#9: minimal public response) ────────────────────
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -258,7 +256,9 @@ app.get('/api/health', (req, res) => {
 app.get('/api/health/db', async (req, res) => {
     try {
         const db = getDB();
-        const [tables] = await db.query('SHOW TABLES');
+        const { rows: tables } = await db.query(
+            "SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename"
+        );
         res.json({ tables });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -279,7 +279,7 @@ app.use((err, req, res, next) => {
 // ── Start ───────────────────────────────────────────
 async function start() {
     try {
-        // Init MySQL & run migrations
+        // Init PostgreSQL & run migrations
         await initDB();
 
         // Init Redis (optional)

@@ -38,7 +38,7 @@ router.post('/send-otp', async (req, res) => {
         if (!isValidEmail(email)) return res.status(400).json({ message: 'Invalid email.' });
 
         const pool = getDB();
-        const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
+        const { rows: existing } = await pool.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
         if (existing.length > 0) {
             // Return generic response to prevent account enumeration (#5)
             return res.json({ message: 'If this email is valid, an OTP has been sent.' });
@@ -46,12 +46,13 @@ router.post('/send-otp', async (req, res) => {
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit OTP
 
-        // Save OTP directly into MySQL to ensure it survives server reboots/scaling on free tiers
+        // Save OTP directly into PostgreSQL to ensure it survives server reboots/scaling on free tiers
         const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
         await pool.query(
-            `INSERT INTO otp_codes (email, code, expires_at, attempts) 
-             VALUES (?, ?, ?, 0) 
-             ON DUPLICATE KEY UPDATE code = VALUES(code), expires_at = VALUES(expires_at), attempts = 0`,
+            `INSERT INTO otp_codes (email, code, expires_at, attempts)
+             VALUES ($1, $2, $3, 0)
+             ON CONFLICT (email) DO UPDATE
+             SET code = EXCLUDED.code, expires_at = EXCLUDED.expires_at, attempts = 0`,
             [email.toLowerCase(), otp, expiresAt]
         );
 
@@ -113,8 +114,11 @@ router.post('/signup', async (req, res) => {
 
         const pool = getDB();
 
-        // 1. Fetch OTP from MySQL (survives reboots safely)
-        const [otpRows] = await pool.query('SELECT code, expires_at, attempts FROM otp_codes WHERE email = ?', [email.toLowerCase()]);
+        // 1. Fetch OTP from PostgreSQL (survives reboots safely)
+        const { rows: otpRows } = await pool.query(
+            'SELECT code, expires_at, attempts FROM otp_codes WHERE email = $1',
+            [email.toLowerCase()]
+        );
 
         if (otpRows.length === 0) {
             return res.status(401).json({ message: 'No OTP requested for this email. Please request a new one.' });
@@ -126,25 +130,25 @@ router.post('/signup', async (req, res) => {
 
         // Brute-force protection: lock after 5 failed attempts (#6)
         if (attempts >= 5) {
-            await pool.query('DELETE FROM otp_codes WHERE email = ?', [email.toLowerCase()]);
+            await pool.query('DELETE FROM otp_codes WHERE email = $1', [email.toLowerCase()]);
             return res.status(429).json({ message: 'Too many failed attempts. Please request a new OTP.' });
         }
 
         if (expiresAt < new Date()) {
-            await pool.query('DELETE FROM otp_codes WHERE email = ?', [email.toLowerCase()]);
+            await pool.query('DELETE FROM otp_codes WHERE email = $1', [email.toLowerCase()]);
             return res.status(401).json({ message: 'OTP has expired. Please request a new one.' });
         }
 
         if (String(storedOtp).trim() !== String(otp).trim()) {
             // Increment attempt counter on failure
-            await pool.query('UPDATE otp_codes SET attempts = attempts + 1 WHERE email = ?', [email.toLowerCase()]);
+            await pool.query('UPDATE otp_codes SET attempts = attempts + 1 WHERE email = $1', [email.toLowerCase()]);
             return res.status(401).json({ message: 'Invalid OTP code.' });
         }
 
         // 2. Check if user already exists
-        const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
+        const { rows: existing } = await pool.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
         if (existing.length > 0) {
-            await pool.query('DELETE FROM otp_codes WHERE email = ?', [email.toLowerCase()]);
+            await pool.query('DELETE FROM otp_codes WHERE email = $1', [email.toLowerCase()]);
             return res.status(409).json({ message: 'An account with this email already exists.' });
         }
 
@@ -152,13 +156,13 @@ router.post('/signup', async (req, res) => {
         const salt = await bcrypt.genSalt(12);
         const hash = await bcrypt.hash(rawPwd, salt);
 
-        const [result] = await pool.query(
-            'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
+        const { rows: insertedRows } = await pool.query(
+            'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id',
             [name.trim(), email.toLowerCase(), hash]
         );
 
         // Delete the used OTP code safely
-        await pool.query('DELETE FROM otp_codes WHERE email = ?', [email.toLowerCase()]);
+        await pool.query('DELETE FROM otp_codes WHERE email = $1', [email.toLowerCase()]);
 
         // Clean up from Redis if it was somehow used
         const redis = getRedis();
@@ -166,7 +170,7 @@ router.post('/signup', async (req, res) => {
             try { await redis.del(`otp:${email.toLowerCase()}`); } catch (e) { /* ignore */ }
         }
 
-        const user = { id: result.insertId, name: name.trim(), email: email.toLowerCase().trim() };
+        const user = { id: insertedRows[0].id, name: name.trim(), email: email.toLowerCase().trim() };
         user.isAdmin = getAdminEmails().includes(user.email.toLowerCase().trim());
         const token = generateToken(user);
 
@@ -194,7 +198,7 @@ router.post('/login', async (req, res) => {
         }
 
         const pool = getDB();
-        const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email.toLowerCase()]);
+        const { rows } = await pool.query('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
         if (rows.length === 0) {
             return res.status(401).json({ message: 'Invalid credentials.' });
         }
@@ -229,7 +233,10 @@ router.get('/me', async (req, res) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         const pool = getDB();
-        const [rows] = await pool.query('SELECT id, name, email, google_id, created_at FROM users WHERE id = ?', [decoded.id]);
+        const { rows } = await pool.query(
+            'SELECT id, name, email, google_id, created_at FROM users WHERE id = $1',
+            [decoded.id]
+        );
         if (rows.length === 0) {
             return res.status(401).json({ message: 'User not found.' });
         }
@@ -289,8 +296,8 @@ router.post('/google', async (req, res) => {
         const pool = getDB();
 
         // Find existing user by googleId or email
-        const [rows] = await pool.query(
-            'SELECT * FROM users WHERE google_id = ? OR email = ? LIMIT 1',
+        const { rows } = await pool.query(
+            'SELECT * FROM users WHERE google_id = $1 OR email = $2 LIMIT 1',
             [googleId, email.toLowerCase()]
         );
 
@@ -298,15 +305,16 @@ router.post('/google', async (req, res) => {
         if (rows.length > 0) {
             user = rows[0];
             if (!user.google_id) {
-                await pool.query('UPDATE users SET google_id = ? WHERE id = ?', [googleId, user.id]);
+                await pool.query('UPDATE users SET google_id = $1 WHERE id = $2', [googleId, user.id]);
                 user.google_id = googleId;
             }
         } else {
-            const [result] = await pool.query(
-                'INSERT INTO users (name, email, google_id) VALUES (?, ?, ?)',
-                [name || email.split('@')[0], email.toLowerCase(), googleId]
+            const displayName = name || email.split('@')[0];
+            const { rows: insertedRows } = await pool.query(
+                'INSERT INTO users (name, email, google_id) VALUES ($1, $2, $3) RETURNING id',
+                [displayName, email.toLowerCase(), googleId]
             );
-            user = { id: result.insertId, name: name || email.split('@')[0], email: email.toLowerCase(), google_id: googleId };
+            user = { id: insertedRows[0].id, name: displayName, email: email.toLowerCase(), google_id: googleId };
         }
 
         const token = generateToken(user);
@@ -326,7 +334,7 @@ router.post('/forgot-password', async (req, res) => {
         }
 
         const pool = getDB();
-        const [rows] = await pool.query('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
+        const { rows } = await pool.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
 
         // Always return success to prevent account enumeration
         if (rows.length === 0) {
@@ -338,8 +346,9 @@ router.post('/forgot-password', async (req, res) => {
 
         await pool.query(
             `INSERT INTO otp_codes (email, code, expires_at, attempts)
-             VALUES (?, ?, ?, 0)
-             ON DUPLICATE KEY UPDATE code = VALUES(code), expires_at = VALUES(expires_at), attempts = 0`,
+             VALUES ($1, $2, $3, 0)
+             ON CONFLICT (email) DO UPDATE
+             SET code = EXCLUDED.code, expires_at = EXCLUDED.expires_at, attempts = 0`,
             [`reset:${email.toLowerCase()}`, otp, expiresAt]
         );
 
@@ -381,32 +390,35 @@ router.post('/reset-password', async (req, res) => {
         const pool = getDB();
         const resetKey = `reset:${email.toLowerCase()}`;
 
-        const [otpRows] = await pool.query('SELECT code, expires_at, attempts FROM otp_codes WHERE email = ?', [resetKey]);
+        const { rows: otpRows } = await pool.query(
+            'SELECT code, expires_at, attempts FROM otp_codes WHERE email = $1',
+            [resetKey]
+        );
         if (otpRows.length === 0) {
             return res.status(401).json({ message: 'No reset code found. Please request a new one.' });
         }
 
         const stored = otpRows[0];
         if (stored.attempts >= 5) {
-            await pool.query('DELETE FROM otp_codes WHERE email = ?', [resetKey]);
+            await pool.query('DELETE FROM otp_codes WHERE email = $1', [resetKey]);
             return res.status(429).json({ message: 'Too many failed attempts. Please request a new code.' });
         }
         if (new Date(stored.expires_at) < new Date()) {
-            await pool.query('DELETE FROM otp_codes WHERE email = ?', [resetKey]);
+            await pool.query('DELETE FROM otp_codes WHERE email = $1', [resetKey]);
             return res.status(401).json({ message: 'Reset code has expired. Please request a new one.' });
         }
         if (String(stored.code).trim() !== String(otp).trim()) {
-            await pool.query('UPDATE otp_codes SET attempts = attempts + 1 WHERE email = ?', [resetKey]);
+            await pool.query('UPDATE otp_codes SET attempts = attempts + 1 WHERE email = $1', [resetKey]);
             return res.status(401).json({ message: 'Invalid reset code.' });
         }
 
         // Update password
         const salt = await bcrypt.genSalt(12);
         const hash = await bcrypt.hash(newPassword, salt);
-        await pool.query('UPDATE users SET password = ? WHERE email = ?', [hash, email.toLowerCase()]);
+        await pool.query('UPDATE users SET password = $1 WHERE email = $2', [hash, email.toLowerCase()]);
 
         // Cleanup OTP
-        await pool.query('DELETE FROM otp_codes WHERE email = ?', [resetKey]);
+        await pool.query('DELETE FROM otp_codes WHERE email = $1', [resetKey]);
 
         res.json({ message: 'Password reset successful. You can now log in.' });
     } catch (error) {

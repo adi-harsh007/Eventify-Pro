@@ -27,7 +27,7 @@ const authenticate = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         const pool = getDB();
-        const [rows] = await pool.query('SELECT id, name, email, google_id, created_at FROM users WHERE id = ?', [decoded.id]);
+        const { rows } = await pool.query('SELECT id, name, email, google_id, created_at FROM users WHERE id = $1', [decoded.id]);
         if (rows.length === 0) {
             return res.status(401).json({ message: 'Invalid token. User not found.' });
         }

@@ -10,8 +10,8 @@ const router = express.Router();
 router.get('/', authenticate, async (req, res) => {
     try {
         const pool = getDB();
-        const [rows] = await pool.query(
-            'SELECT * FROM registrations WHERE user_id = ?',
+        const { rows } = await pool.query(
+            'SELECT * FROM registrations WHERE user_id = $1',
             [req.user.id]
         );
         res.json(rows);
@@ -25,7 +25,7 @@ router.get('/', authenticate, async (req, res) => {
 router.get('/all', authenticate, requireAdmin, async (req, res) => {
     try {
         const pool = getDB();
-        const [rows] = await pool.query('SELECT * FROM registrations');
+        const { rows } = await pool.query('SELECT * FROM registrations');
         res.json(rows);
     } catch (error) {
         logger.error('Get all registrations error:', error);
@@ -37,7 +37,7 @@ router.get('/all', authenticate, requireAdmin, async (req, res) => {
 router.get('/users', authenticate, requireAdmin, async (req, res) => {
     try {
         const pool = getDB();
-        const [rows] = await pool.query('SELECT id, name, email, created_at FROM users');
+        const { rows } = await pool.query('SELECT id, name, email, created_at FROM users');
         res.json(rows);
     } catch (error) {
         logger.error('Get users error:', error);
@@ -47,146 +47,151 @@ router.get('/users', authenticate, requireAdmin, async (req, res) => {
 
 /**
  * POST /api/registrations — join an event
- * Uses MySQL transaction + SELECT … FOR UPDATE to prevent overbooking.
+ * Uses PostgreSQL transaction + SELECT … FOR UPDATE to prevent overbooking.
  */
 router.post('/', authenticate, async (req, res) => {
+    const { eventId, teamName } = req.body;
+    if (!eventId) {
+        return res.status(400).json({ message: 'Event ID is required.' });
+    }
+
     const pool = getDB();
-    const conn = await pool.getConnection();
+    const client = await pool.connect();
+    let inTx = false;
 
     try {
-        const { eventId, teamName } = req.body;
-        if (!eventId) {
-            conn.release();
-            return res.status(400).json({ message: 'Event ID is required.' });
-        }
-
-        await conn.beginTransaction();
+        await client.query('BEGIN');
+        inTx = true;
 
         // Lock the event row
-        const [events] = await conn.query(
-            'SELECT id, capacity, registered_count, is_team_event, max_team_size FROM events WHERE id = ? FOR UPDATE',
+        const { rows: events } = await client.query(
+            'SELECT id, date, time, capacity, registered_count, is_team_event, max_team_size FROM events WHERE id = $1 FOR UPDATE',
             [eventId]
         );
 
         if (events.length === 0) {
-            await conn.rollback();
-            conn.release();
+            await client.query('ROLLBACK');
+            inTx = false;
             return res.status(404).json({ message: 'Event not found.' });
         }
 
         const event = events[0];
 
-        const [eventDateRows] = await conn.query('SELECT date, time FROM events WHERE id = ?', [eventId]);
-        const eventDateRow = eventDateRows[0];
-        
         try {
             const eventDateTime = normalizeEventDateTime({
-                date: eventDateRow.date,
-                time: eventDateRow.time
+                date: event.date,
+                time: event.time
             });
             if (eventDateTime <= new Date()) {
-                await conn.rollback();
-                conn.release();
+                await client.query('ROLLBACK');
+                inTx = false;
                 return res.status(400).json({ message: 'This event has already ended. Registration is closed.' });
             }
         } catch (err) {
             logger.error(`Error parsing event date/time for registration (Event ID: ${eventId}):`, err);
-            // Optionally, handle error if event date is unparseable
         }
 
         if (event.registered_count >= event.capacity) {
-            await conn.rollback();
-            conn.release();
+            await client.query('ROLLBACK');
+            inTx = false;
             return res.status(400).json({ message: 'This event is at full capacity.' });
         }
 
         if (event.is_team_event) {
             if (!teamName) {
-                await conn.rollback();
-                conn.release();
+                await client.query('ROLLBACK');
+                inTx = false;
                 return res.status(400).json({ message: 'A team name is required for this event.' });
             }
 
-            // Check how many people are already registered under this team
-            const [teamCounts] = await conn.query(
-                'SELECT COUNT(*) as member_count FROM registrations WHERE event_id = ? AND team_name = ? FOR UPDATE',
+            // Event row FOR UPDATE already serializes concurrent joins for this event
+            const { rows: teamCounts } = await client.query(
+                'SELECT COUNT(*)::int AS member_count FROM registrations WHERE event_id = $1 AND team_name = $2',
                 [eventId, teamName]
             );
 
             if (teamCounts[0].member_count >= event.max_team_size) {
-                await conn.rollback();
-                conn.release();
+                await client.query('ROLLBACK');
+                inTx = false;
                 return res.status(400).json({ message: `Team "${teamName}" is already full (max ${event.max_team_size} members).` });
             }
         }
 
         // Attempt insert (unique constraint catches duplicates)
         try {
-            await conn.query(
-                'INSERT INTO registrations (user_id, event_id, team_name) VALUES (?, ?, ?)',
+            await client.query(
+                'INSERT INTO registrations (user_id, event_id, team_name) VALUES ($1, $2, $3)',
                 [req.user.id, eventId, event.is_team_event ? teamName : null]
             );
         } catch (err) {
-            if (err.code === 'ER_DUP_ENTRY') {
-                await conn.rollback();
-                conn.release();
+            if (err.code === '23505') {
+                await client.query('ROLLBACK');
+                inTx = false;
                 return res.status(409).json({ message: 'You have already joined this event.' });
             }
             throw err;
         }
 
-        await conn.query(
-            'UPDATE events SET registered_count = registered_count + 1 WHERE id = ?',
+        await client.query(
+            'UPDATE events SET registered_count = registered_count + 1 WHERE id = $1',
             [eventId]
         );
 
-        await conn.commit();
-        conn.release();
+        await client.query('COMMIT');
+        inTx = false;
 
         logger.info(`User ${req.user.id} registered for event ${eventId}`);
         res.status(201).json({ message: 'Successfully joined the event.', userId: req.user.id, eventId });
     } catch (error) {
-        await conn.rollback();
-        conn.release();
+        if (inTx) {
+            try { await client.query('ROLLBACK'); } catch (_) { /* ignore rollback errors */ }
+        }
         logger.error('Join event error:', error);
         res.status(500).json({ message: 'Failed to join event.' });
+    } finally {
+        client.release();
     }
 });
 
 // DELETE /api/registrations/:eventId — leave an event
 router.delete('/:eventId', authenticate, async (req, res) => {
     const pool = getDB();
-    const conn = await pool.getConnection();
+    const client = await pool.connect();
+    let inTx = false;
 
     try {
-        await conn.beginTransaction();
+        await client.query('BEGIN');
+        inTx = true;
 
-        const [result] = await conn.query(
-            'DELETE FROM registrations WHERE user_id = ? AND event_id = ?',
+        const result = await client.query(
+            'DELETE FROM registrations WHERE user_id = $1 AND event_id = $2',
             [req.user.id, req.params.eventId]
         );
 
-        if (result.affectedRows === 0) {
-            await conn.rollback();
-            conn.release();
+        if (result.rowCount === 0) {
+            await client.query('ROLLBACK');
+            inTx = false;
             return res.status(404).json({ message: 'Registration not found.' });
         }
 
-        await conn.query(
-            'UPDATE events SET registered_count = GREATEST(registered_count - 1, 0) WHERE id = ?',
+        await client.query(
+            'UPDATE events SET registered_count = GREATEST(registered_count - 1, 0) WHERE id = $1',
             [req.params.eventId]
         );
 
-        await conn.commit();
-        conn.release();
+        await client.query('COMMIT');
+        inTx = false;
 
         logger.info(`User ${req.user.id} left event ${req.params.eventId}`);
         res.json({ message: 'Successfully left the event.' });
     } catch (error) {
-        await conn.rollback();
-        conn.release();
+        if (inTx) {
+            try { await client.query('ROLLBACK'); } catch (_) { /* ignore rollback errors */ }
+        }
         logger.error('Leave event error:', error);
         res.status(500).json({ message: 'Failed to leave event.' });
+    } finally {
+        client.release();
     }
 });
 

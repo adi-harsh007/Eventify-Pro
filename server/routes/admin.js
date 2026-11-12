@@ -13,7 +13,7 @@ router.use(authenticate, requireAdmin);
 router.get('/events', async (req, res) => {
     try {
         const pool = getDB();
-        const [rows] = await pool.query(
+        const { rows } = await pool.query(
             `SELECT e.*, u.name AS creator_name, u.email AS creator_email
              FROM events e LEFT JOIN users u ON e.created_by = u.id
              ORDER BY e.created_at DESC`
@@ -29,22 +29,32 @@ router.get('/events', async (req, res) => {
 router.patch('/events/:id', async (req, res) => {
     try {
         const pool = getDB();
-        const [existing] = await pool.query('SELECT id FROM events WHERE id = ?', [req.params.id]);
+        const { rows: existing } = await pool.query('SELECT id FROM events WHERE id = $1', [req.params.id]);
         if (existing.length === 0) {
             return res.status(404).json({ message: 'Event not found.' });
         }
 
         const { title, description, date, time, location, capacity, category, imageUrl } = req.body;
 
-        await pool.query(
-            `UPDATE events SET title = COALESCE(?, title), description = COALESCE(?, description),
-             date = COALESCE(?, date), time = COALESCE(?, time), location = COALESCE(?, location),
-             capacity = COALESCE(?, capacity), category = COALESCE(?, category),
-             image_url = COALESCE(?, image_url) WHERE id = ?`,
-            [title, description, date, time, location, capacity, category, imageUrl, req.params.id]
+        const { rows: updated } = await pool.query(
+            `UPDATE events SET title = COALESCE($1, title), description = COALESCE($2, description),
+             date = COALESCE($3, date), time = COALESCE($4, time), location = COALESCE($5, location),
+             capacity = COALESCE($6, capacity), category = COALESCE($7, category),
+             image_url = COALESCE($8, image_url) WHERE id = $9
+             RETURNING *`,
+            [
+                title ?? null,
+                description ?? null,
+                date ?? null,
+                time ?? null,
+                location ?? null,
+                capacity ?? null,
+                category ?? null,
+                imageUrl ?? null,
+                req.params.id
+            ]
         );
 
-        const [updated] = await pool.query('SELECT * FROM events WHERE id = ?', [req.params.id]);
         await cacheInvalidate('feed:*');
         await cacheInvalidate('discovery:*');
 
@@ -60,13 +70,13 @@ router.patch('/events/:id', async (req, res) => {
 router.delete('/events/:id', async (req, res) => {
     try {
         const pool = getDB();
-        const [existing] = await pool.query('SELECT * FROM events WHERE id = ?', [req.params.id]);
+        const { rows: existing } = await pool.query('SELECT * FROM events WHERE id = $1', [req.params.id]);
         if (existing.length === 0) {
             return res.status(404).json({ message: 'Event not found.' });
         }
 
-        await pool.query('DELETE FROM registrations WHERE event_id = ?', [req.params.id]);
-        await pool.query('DELETE FROM events WHERE id = ?', [req.params.id]);
+        await pool.query('DELETE FROM registrations WHERE event_id = $1', [req.params.id]);
+        await pool.query('DELETE FROM events WHERE id = $1', [req.params.id]);
         await cacheInvalidate('feed:*');
         await cacheInvalidate('discovery:*');
 
@@ -82,10 +92,10 @@ router.delete('/events/:id', async (req, res) => {
 router.get('/events/:id/registrations', async (req, res) => {
     try {
         const pool = getDB();
-        const [rows] = await pool.query(
+        const { rows } = await pool.query(
             `SELECT r.id, r.user_id, r.event_id, r.created_at, u.name, u.email
              FROM registrations r LEFT JOIN users u ON r.user_id = u.id
-             WHERE r.event_id = ?
+             WHERE r.event_id = $1
              ORDER BY r.created_at DESC`,
             [req.params.id]
         );
@@ -99,34 +109,40 @@ router.get('/events/:id/registrations', async (req, res) => {
 // DELETE /api/admin/registrations/:id — remove a registration
 router.delete('/registrations/:id', async (req, res) => {
     const pool = getDB();
-    const conn = await pool.getConnection();
-    try {
-        await conn.beginTransaction();
+    const client = await pool.connect();
+    let inTx = false;
 
-        const [regs] = await conn.query('SELECT * FROM registrations WHERE id = ?', [req.params.id]);
+    try {
+        await client.query('BEGIN');
+        inTx = true;
+
+        const { rows: regs } = await client.query('SELECT * FROM registrations WHERE id = $1', [req.params.id]);
         if (regs.length === 0) {
-            await conn.rollback();
-            conn.release();
+            await client.query('ROLLBACK');
+            inTx = false;
             return res.status(404).json({ message: 'Registration not found.' });
         }
 
         const reg = regs[0];
-        await conn.query('DELETE FROM registrations WHERE id = ?', [req.params.id]);
-        await conn.query(
-            'UPDATE events SET registered_count = GREATEST(registered_count - 1, 0) WHERE id = ?',
+        await client.query('DELETE FROM registrations WHERE id = $1', [req.params.id]);
+        await client.query(
+            'UPDATE events SET registered_count = GREATEST(registered_count - 1, 0) WHERE id = $1',
             [reg.event_id]
         );
 
-        await conn.commit();
-        conn.release();
+        await client.query('COMMIT');
+        inTx = false;
 
         logger.info(`Admin removed registration ${req.params.id}`);
         res.json({ message: 'Registration removed successfully.' });
     } catch (error) {
-        await conn.rollback();
-        conn.release();
+        if (inTx) {
+            try { await client.query('ROLLBACK'); } catch (_) { /* ignore rollback errors */ }
+        }
         logger.error('Admin remove registration error:', error);
         res.status(500).json({ message: 'Failed to remove registration.' });
+    } finally {
+        client.release();
     }
 });
 
@@ -134,7 +150,7 @@ router.delete('/registrations/:id', async (req, res) => {
 router.get('/users', async (req, res) => {
     try {
         const pool = getDB();
-        const [rows] = await pool.query('SELECT id, name, email, created_at FROM users ORDER BY created_at DESC');
+        const { rows } = await pool.query('SELECT id, name, email, created_at FROM users ORDER BY created_at DESC');
         res.json(rows);
     } catch (error) {
         logger.error('Admin get users error:', error);
@@ -146,10 +162,10 @@ router.get('/users', async (req, res) => {
 router.get('/feedback', async (req, res) => {
     try {
         const pool = getDB();
-        const [rows] = await pool.query(
-            `SELECT f.id, f.rating, f.comment, f.created_at, 
-                    u.name as user_name, u.email as user_email,
-                    e.title as event_title
+        const { rows } = await pool.query(
+            `SELECT f.id, f.rating, f.comment, f.created_at,
+                    u.name AS user_name, u.email AS user_email,
+                    e.title AS event_title
              FROM event_feedbacks f
              JOIN users u ON f.user_id = u.id
              JOIN events e ON f.event_id = e.id
@@ -166,12 +182,12 @@ router.get('/feedback', async (req, res) => {
 router.delete('/feedback/:id', async (req, res) => {
     try {
         const pool = getDB();
-        const [existing] = await pool.query('SELECT id FROM event_feedbacks WHERE id = ?', [req.params.id]);
+        const { rows: existing } = await pool.query('SELECT id FROM event_feedbacks WHERE id = $1', [req.params.id]);
         if (existing.length === 0) {
             return res.status(404).json({ message: 'Feedback not found.' });
         }
 
-        await pool.query('DELETE FROM event_feedbacks WHERE id = ?', [req.params.id]);
+        await pool.query('DELETE FROM event_feedbacks WHERE id = $1', [req.params.id]);
         logger.info(`Admin deleted feedback ${req.params.id}`);
         res.json({ message: 'Feedback deleted successfully.' });
     } catch (error) {

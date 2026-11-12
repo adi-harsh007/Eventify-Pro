@@ -96,7 +96,7 @@ export default function FeedbackSection() {
             What People <span className="bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">Say</span>
           </h2>
           <p className="max-w-xl mx-auto text-zinc-400 text-base mb-8">
-            Real feedback from students, organizers, and recruiters — stored in our MySQL database. You can submit your own review too!
+            Real feedback from students, organizers, and recruiters — stored in our PostgreSQL database. You can submit your own review too!
           </p>
           {!showForm && (
             <button onClick={() => setShowForm(true)} className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-600 to-pink-600 px-6 py-3 text-sm font-semibold text-white hover:opacity-90 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-violet-500/25">

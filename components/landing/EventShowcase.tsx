@@ -60,7 +60,7 @@ export default function EventShowcase({ onGetStarted }: { onGetStarted: () => vo
             Upcoming <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Events</span>
           </h2>
           <p className="max-w-xl mx-auto text-zinc-400 text-base">
-            These events are fetched live from our MySQL database. Click any card to explore — sign in to register!
+            These events are fetched live from our PostgreSQL database. Click any card to explore — sign in to register!
           </p>
         </motion.div>
 

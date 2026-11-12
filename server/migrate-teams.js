@@ -1,46 +1,28 @@
-require('dotenv').config();
-const mysql = require('mysql2/promise');
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+const { createPool } = require('./lib/db');
 
 async function migrateTeamFlags() {
-    const pool = mysql.createPool({
-        host: process.env.MYSQL_HOST,
-        port: process.env.MYSQL_PORT,
-        user: process.env.MYSQL_USER,
-        password: process.env.MYSQL_PASSWORD,
-        database: process.env.MYSQL_DATABASE,
-        waitForConnections: true,
-        connectionLimit: 10,
-        queueLimit: 0
-    });
+    const pool = createPool();
 
     try {
-        console.log('Connecting to database for migration...');
+        console.log('Connecting to PostgreSQL database for migration...');
 
-        try {
-            await pool.query('ALTER TABLE events ADD COLUMN is_team_event BOOLEAN DEFAULT FALSE');
-            console.log('✅ Added is_team_event to events table');
-        } catch (e) {
-            console.log('ℹ️ is_team_event already exists or error:', e.message);
-        }
+        await pool.query('ALTER TABLE events ADD COLUMN IF NOT EXISTS is_team_event BOOLEAN DEFAULT FALSE');
+        console.log('✅ Ensured is_team_event on events table');
 
-        try {
-            await pool.query('ALTER TABLE events ADD COLUMN max_team_size INT DEFAULT 1');
-            console.log('✅ Added max_team_size to events table');
-        } catch (e) {
-            console.log('ℹ️ max_team_size already exists or error:', e.message);
-        }
+        await pool.query('ALTER TABLE events ADD COLUMN IF NOT EXISTS max_team_size INTEGER DEFAULT 1');
+        console.log('✅ Ensured max_team_size on events table');
 
-        try {
-            await pool.query('ALTER TABLE registrations ADD COLUMN team_name VARCHAR(100) DEFAULT NULL');
-            console.log('✅ Added team_name to registrations table');
-        } catch (e) {
-            console.log('ℹ️ team_name already exists or error:', e.message);
-        }
+        await pool.query('ALTER TABLE registrations ADD COLUMN IF NOT EXISTS team_name VARCHAR(100) DEFAULT NULL');
+        console.log('✅ Ensured team_name on registrations table');
 
         console.log('Migration completed.');
     } catch (e) {
         console.error('Migration failed:', e);
-        process.exit(1);
+        process.exitCode = 1;
+    } finally {
+        await pool.end();
     }
 }
 
