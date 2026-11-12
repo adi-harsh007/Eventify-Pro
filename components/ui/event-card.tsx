@@ -2,10 +2,10 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Ticket } from "lucide-react";
+import { Ticket, MapPin, Users, CheckCircle2 } from "lucide-react";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { getEventTheme, getCalendarBadgeParts } from "@/lib/eventThemes";
 
-// Adapted for Eventify Pro
 interface EventCardProps extends React.HTMLAttributes<HTMLDivElement> {
     imageUrl: string;
     category: string;
@@ -13,6 +13,9 @@ interface EventCardProps extends React.HTMLAttributes<HTMLDivElement> {
     location: string;
     description: string;
     date: string;
+    rawDate?: string;
+    registeredCount?: number;
+    capacity?: number;
     isRegistered: boolean;
     isSoldOut?: boolean;
     isPastEvent?: boolean;
@@ -32,6 +35,9 @@ const EventCard = React.forwardRef<HTMLDivElement, EventCardProps>(
             location,
             description,
             date,
+            rawDate,
+            registeredCount,
+            capacity,
             isRegistered,
             isSoldOut = false,
             isPastEvent = false,
@@ -44,6 +50,11 @@ const EventCard = React.forwardRef<HTMLDivElement, EventCardProps>(
         ref
     ) => {
         const [showConfirm, setShowConfirm] = React.useState(false);
+        const theme = getEventTheme(category);
+        const badge = getCalendarBadgeParts(rawDate || date);
+        const hasCustomImage = Boolean(imageUrl && !imageUrl.includes("picsum.photos"));
+        const showCapacityBar = typeof capacity === "number" && capacity > 0 && typeof registeredCount === "number";
+        const fillPercent = showCapacityBar ? Math.min(100, Math.round((registeredCount! / capacity!) * 100)) : 0;
 
         return (
             <>
@@ -51,52 +62,119 @@ const EventCard = React.forwardRef<HTMLDivElement, EventCardProps>(
                     ref={ref}
                     onClick={onClick}
                     className={cn(
-                        "group relative w-full max-w-sm overflow-hidden rounded-[20px] border border-[rgba(255,255,255,0.08)] bg-[#161E2E] shadow-lg",
-                        "transition-all duration-300 ease-in-out hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] hover:-translate-y-1",
+                        "group relative w-full overflow-hidden rounded-3xl border border-white/10 bg-[#0E1424] flex flex-col justify-between",
+                        "transition-transform duration-300 ease-out hover:-translate-y-1.5 hover:border-white/25",
                         onClick && "cursor-pointer",
                         className
                     )}
+                    style={{
+                        boxShadow: `0 18px 40px -24px ${theme.glowRgba}`,
+                        ...props.style,
+                    }}
                     {...props}
                 >
-                    <img
-                        src={imageUrl}
-                        alt={title}
-                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-110"
-                    />
+                    {/* Top Visual Poster Header */}
+                    <div className="relative h-40 shrink-0 overflow-hidden" style={{ background: theme.gradient }}>
+                        {hasCustomImage ? (
+                            <img
+                                src={imageUrl}
+                                alt={title}
+                                loading="lazy"
+                                decoding="async"
+                                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                            />
+                        ) : (
+                            <>
+                                <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-105" style={{ background: theme.patternBg }} />
+                                <div className="absolute inset-0 bg-festival-grid opacity-35" />
+                            </>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0E1424] via-[#0E1424]/30 to-black/25" />
 
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-[#0B0F19]/60 to-transparent"></div>
-
-                    <div className="relative flex h-full flex-col justify-between p-6 text-white">
-                        <div className="flex h-40 items-start justify-between">
-                            <span className="inline-flex items-center rounded-full border border-white/20 bg-black/40 backdrop-blur-md px-3 py-1 text-xs font-medium text-white shadow-sm">
-                                {category}
-                            </span>
-                            {isRegistered && (
-                                <span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/20 backdrop-blur-md px-3 py-1 text-xs font-medium text-emerald-400 shadow-sm">
-                                    ✓ Reserved
+                        {/* Top Pills & Date Stamp */}
+                        <div className="relative z-10 flex items-start justify-between p-4">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                                <span
+                                    className={cn(
+                                        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md",
+                                        theme.pillClass
+                                    )}
+                                >
+                                    {category}
                                 </span>
-                            )}
-                        </div>
-
-                        <div className="space-y-4 -translate-y-16 md:translate-y-0 transition-transform duration-500 ease-in-out md:group-hover:-translate-y-16">
-                            <div>
-                                <h3 className="text-2xl font-bold text-white tracking-tight">{title}</h3>
-                                <p className="text-sm text-white/80 mt-1">{location}</p>
+                                {isTeamEvent && (
+                                    <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/45 px-2.5 py-0.5 text-[10px] font-semibold text-white/90 backdrop-blur-md">
+                                        <Users className="h-3 w-3" />
+                                        Team · {maxTeamSize || 2}
+                                    </span>
+                                )}
                             </div>
-                            <div>
-                                <h4 className="text-xs font-semibold text-[#3B82F6] tracking-wider uppercase mb-2">Details</h4>
-                                <p className="text-sm text-white/70 leading-relaxed line-clamp-3">
-                                    {description}
-                                </p>
-                            </div>
-                        </div>
 
-                        <div className="absolute bottom-0 md:-bottom-20 left-0 w-full p-6 opacity-100 md:opacity-0 transition-all duration-500 ease-in-out md:group-hover:bottom-0 md:group-hover:opacity-100">
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-[#0B0F19]/90 to-transparent rounded-b-[20px]"></div>
-                            <div className="relative flex items-end justify-between">
-                                <div>
-                                    <span className="text-sm font-bold text-white/90 block">{date}</span>
+                            <div className="flex flex-col items-center gap-1.5">
+                                <div className="rounded-xl border border-white/20 bg-black/55 px-2.5 py-1 text-center font-mono-num backdrop-blur-md">
+                                    <span className="block text-[9px] font-bold tracking-widest text-amber-300 leading-none">
+                                        {badge.month}
+                                    </span>
+                                    <span className="block text-sm font-bold text-white leading-tight">
+                                        {badge.day}
+                                    </span>
                                 </div>
+                                {isRegistered && (
+                                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/35 bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300 backdrop-blur-md">
+                                        <CheckCircle2 className="h-3 w-3" />
+                                        Pass
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Body */}
+                    <div className="flex flex-1 flex-col justify-between p-5 pt-2">
+                        <div className="space-y-2">
+                            <h3 className="font-display text-lg font-bold tracking-tight text-white line-clamp-1 group-hover:text-amber-200 transition-colors">
+                                {title}
+                            </h3>
+                            <p className="inline-flex items-center gap-1.5 text-xs text-slate-400 line-clamp-1">
+                                <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+                                {location}
+                            </p>
+                            <p className="text-xs sm:text-sm text-slate-300/75 leading-relaxed line-clamp-2">
+                                {description}
+                            </p>
+                        </div>
+
+                        {/* Perforated Stub Footer */}
+                        <div className="mt-4 space-y-3">
+                            {showCapacityBar && !isPastEvent && (
+                                <div className="space-y-1">
+                                    <div className="flex items-center justify-between text-[11px] font-mono-num text-slate-400">
+                                        <span>{registeredCount} / {capacity} spots filled</span>
+                                        <span className="text-slate-300">{Math.max(0, capacity! - registeredCount!)} left</span>
+                                    </div>
+                                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]">
+                                        <div
+                                            className="h-full rounded-full transition-all duration-300"
+                                            style={{
+                                                width: `${fillPercent}%`,
+                                                background: `linear-gradient(90deg, ${theme.accent}, ${theme.secondary})`,
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="relative flex items-center pt-1">
+                                <div className="-ml-7 h-4 w-4 rounded-full bg-[#07090F] border-r border-white/10" />
+                                <div className="flex-1 border-t border-dashed border-white/10 mx-2" />
+                                <div className="-mr-7 h-4 w-4 rounded-full bg-[#07090F] border-l border-white/10" />
+                            </div>
+
+                            <div className="flex items-center justify-between gap-3">
+                                <span className="text-xs font-mono-num text-slate-300 line-clamp-1">
+                                    {date}
+                                </span>
+
                                 <Button
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -105,25 +183,24 @@ const EventCard = React.forwardRef<HTMLDivElement, EventCardProps>(
                                     disabled={(isSoldOut && !isRegistered) || isPastEvent}
                                     size="sm"
                                     className={cn(
-                                        "cursor-pointer transition-all duration-300",
+                                        "shrink-0 rounded-xl px-3.5 text-xs font-bold cursor-pointer transition-transform duration-200",
                                         isPastEvent
-                                            ? "cursor-not-allowed bg-indigo-500/10 text-indigo-300/70 border border-indigo-500/20 shadow-none hover:shadow-none hover:-translate-y-0"
+                                            ? "cursor-not-allowed bg-white/5 text-slate-400 border border-white/10 shadow-none"
                                             : isRegistered
-                                                ? "bg-white/10 text-white hover:bg-red-500/20 hover:text-red-400 border border-white/10 hover:shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:scale-105"
+                                                ? "bg-white/10 text-white hover:bg-rose-500/20 hover:text-rose-300 border border-white/15"
                                                 : isSoldOut
-                                                    ? "cursor-not-allowed bg-white/5 text-white/40 border border-white/10 shadow-none hover:shadow-none hover:-translate-y-0"
-                                                    : "hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.5)]"
+                                                    ? "cursor-not-allowed bg-white/5 text-slate-500 border border-white/10 shadow-none"
+                                                    : "bg-white text-slate-950 hover:bg-amber-200 hover:scale-[1.03] active:scale-[0.98]"
                                     )}
                                 >
-                                    {isPastEvent ? "Event Ended" : isRegistered ? "Leave Event" : isSoldOut ? "Sold Out" : "Get Ticket"}
-                                    {!isSoldOut && !isPastEvent && <Ticket className="ml-2 h-4 w-4" />}
+                                    {isPastEvent ? "Ended" : isRegistered ? "Cancel Pass" : isSoldOut ? "Sold Out" : "Get Pass"}
+                                    {!isSoldOut && !isPastEvent && <Ticket className="ml-1.5 h-3.5 w-3.5" />}
                                 </Button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Confirmation Modal — rendered via portal so it's above everything */}
                 {showConfirm && createPortal(
                     <ConfirmModal
                         open={showConfirm}
@@ -146,4 +223,3 @@ const EventCard = React.forwardRef<HTMLDivElement, EventCardProps>(
 EventCard.displayName = "EventCard";
 
 export { EventCard };
-

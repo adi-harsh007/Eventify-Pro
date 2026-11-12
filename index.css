@@ -1,52 +1,30 @@
 @import "tailwindcss";
 
-/* ── shadcn/ui CSS Variables (required for UI components) ── */
-/* ── shadcn/ui CSS Variables (Premium Deep Obsidian Theme) ── */
+/* ── Theme Tokens ─────────────────────────────────────── */
 :root {
-  /* Deep Navy-Black Background (Matches Landing & Auth Pages) */
-  --background: 223 39% 7.5%;
-  /* Translates to approx #0B0F19 */
-  /* #0B0F19 */
+  --background: 224 36% 4.5%;
   --foreground: 210 40% 98%;
-  /* #F9FAFB */
-
-  /* Rich Blue-Grey Surface */
-  --card: 220 35% 13%;
-  /* #161E2E */
+  --card: 222 33% 10%;
   --card-foreground: 210 40% 98%;
-
-  --popover: 221 39% 11%;
+  --popover: 222 36% 8%;
   --popover-foreground: 210 40% 98%;
-
-  /* Primary Accent: #3B82F6 */
   --primary: 217 91% 60%;
   --primary-foreground: 210 40% 98%;
-
-  /* Secondary Accent / Glow: #6366F1 */
-  --secondary: 239 84% 67%;
+  --secondary: 263 85% 65%;
   --secondary-foreground: 210 40% 98%;
-
-  --muted: 221 39% 11%;
+  --muted: 222 30% 13%;
   --muted-foreground: 215 20% 65%;
-  /* #94A3B8 */
-
-  --accent: 221 39% 11%;
+  --accent: 222 30% 14%;
   --accent-foreground: 210 40% 98%;
-
-  --destructive: 0 62.8% 30.6%;
+  --destructive: 0 72% 51%;
   --destructive-foreground: 210 40% 98%;
-
-  /* Border Soft equivalent (approx 8% white over dark background) */
-  --border: 220 15% 25%;
-  --input: 220 15% 25%;
-  --ring: 239 84% 67%;
-
+  --border: 220 20% 18%;
+  --input: 220 20% 18%;
+  --ring: 217 91% 60%;
   --radius: 1.25rem;
-  /* 20px for premium feel */
 }
 
-/* ── Eventify Pro — Base Styles ─────────────────────── */
-
+/* ── Base Styles ──────────────────────────────────────── */
 *,
 *::before,
 *::after {
@@ -58,17 +36,27 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  background-color: #07090F;
 }
 
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  background-color: #07090F;
+  color: #F8FAFC;
   overflow-x: hidden;
 }
 
-/* ── Custom Scrollbar ──────────────────────────────── */
+.font-display {
+  font-family: 'Syne', 'Plus Jakarta Sans', sans-serif;
+}
+
+.font-mono-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Custom Scrollbar ─────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -79,67 +67,68 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2d3748;
+  background: rgba(148, 163, 184, 0.22);
   border-radius: 100px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #4a5568;
+  background: rgba(148, 163, 184, 0.4);
 }
 
-/* ── Tailwind-style Animation Utilities ────────────── */
+/* ── GPU-Composited Keyframes ─────────────────────────── */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slideInFromBottom {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translate3d(0, 16px, 0);
   }
-
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
 @keyframes zoomIn95 {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale3d(0.95, 0.95, 1);
   }
-
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: scale3d(1, 1, 1);
   }
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 @keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
+  0% { transform: translate3d(-100%, 0, 0); }
+  100% { transform: translate3d(100%, 0, 0); }
+}
 
-  100% {
-    background-position: 200% 0;
-  }
+@keyframes marqueeLeft {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+
+@keyframes marqueeRight {
+  0% { transform: translate3d(-50%, 0, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes floatSlow {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -8px, 0); }
 }
 
 .animate-in {
-  animation: slideInFromBottom 0.5s ease-out both;
+  animation: slideInFromBottom 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .fade-in {
@@ -147,18 +136,76 @@ body {
 }
 
 .slide-in-from-bottom-4 {
-  animation: slideInFromBottom 0.5s ease-out both;
+  animation: slideInFromBottom 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .zoom-in-95 {
-  animation: zoomIn95 0.2s ease-out both;
+  animation: zoomIn95 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .animate-spin {
   animation: spin 1s linear infinite;
 }
 
-/* ── Line Clamp Utility ────────────────────────────── */
+.animate-float-slow {
+  animation: floatSlow 6s ease-in-out infinite;
+}
+
+.marquee-track-left {
+  display: flex;
+  width: max-content;
+  animation: marqueeLeft 42s linear infinite;
+  will-change: transform;
+}
+
+.marquee-track-right {
+  display: flex;
+  width: max-content;
+  animation: marqueeRight 46s linear infinite;
+  will-change: transform;
+}
+
+.marquee-group:hover .marquee-track-left,
+.marquee-group:hover .marquee-track-right {
+  animation-play-state: paused;
+}
+
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.skeleton-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  animation: shimmer 1.6s infinite;
+}
+
+/* Subtle dot/grid background texture */
+.bg-festival-grid {
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Optimize off-screen section paint */
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 640px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track-left,
+  .marquee-track-right,
+  .animate-float-slow {
+    animation: none;
+  }
+}
+
+/* ── Line Clamp Utility ───────────────────────────────── */
 .line-clamp-1 {
   display: -webkit-box;
   -webkit-line-clamp: 1;
@@ -175,7 +222,15 @@ body {
   overflow: hidden;
 }
 
-/* ── Focus Ring Utility ────────────────────────────── */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Focus Ring & Selection ───────────────────────────── */
 input:focus,
 textarea:focus,
 select:focus,
@@ -183,8 +238,7 @@ button:focus-visible {
   outline: none;
 }
 
-/* ── Selection ──────────────────────────────────────── */
 ::selection {
-  background: #c7d2fe;
-  color: #312e81;
+  background: rgba(244, 63, 94, 0.35);
+  color: #fff;
 }

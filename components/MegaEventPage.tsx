@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { User } from '../types';
 import { Sparkles, Calendar, Music, Star, Ticket, CheckCircle2, Edit3, X } from 'lucide-react';
 import { apiGetMegaEventStatus, apiJoinMegaEvent, apiGetMegaEventLineup, apiAdminUpdateMegaEventLineup } from '../apiService';
-import { ParticleTextEffect } from './ui/particle-text-effect';
 import { DatePicker } from './ui/DatePicker';
 import { TimePicker } from './ui/TimePicker';
 
@@ -26,15 +26,15 @@ const getIconFromName = (name: string, className: string) => {
         case 'Star': return <Star className={className} />;
         default: return <Calendar className={className} />;
     }
-}
+};
 
 const colorForIcon = (name: string) => {
     switch (name) {
-        case 'Music': return 'text-fuchsia-400';
-        case 'Star': return 'text-blue-400';
-        default: return 'text-amber-400';
+        case 'Music': return 'text-rose-300';
+        case 'Star': return 'text-cyan-300';
+        default: return 'text-amber-300';
     }
-}
+};
 
 const MegaEventPage: React.FC<MegaEventPageProps> = ({ user }) => {
     const [hasTicket, setHasTicket] = useState(false);
@@ -42,8 +42,6 @@ const MegaEventPage: React.FC<MegaEventPageProps> = ({ user }) => {
     const [processing, setProcessing] = useState(false);
     const [schedule, setSchedule] = useState<LineupItem[]>([]);
     const [editingItem, setEditingItem] = useState<LineupItem | null>(null);
-
-    // Edit Form State
     const [editForm, setEditForm] = useState<Partial<LineupItem>>({});
 
     const fetchData = async () => {
@@ -97,7 +95,6 @@ const MegaEventPage: React.FC<MegaEventPageProps> = ({ user }) => {
         if (!editingItem) return;
         try {
             await apiAdminUpdateMegaEventLineup(editingItem.id, editForm as Record<string, unknown>);
-            // Update local state to avoid refresh
             setSchedule(prev => prev.map(item => item.id === editingItem.id ? { ...item, ...editForm as LineupItem } : item));
             setEditingItem(null);
         } catch (err: any) {
@@ -113,7 +110,6 @@ const MegaEventPage: React.FC<MegaEventPageProps> = ({ user }) => {
 
     const formatTime = (timeStr: string | null) => {
         if (!timeStr) return '';
-        // Assuming 'HH:MM:SS'
         const parts = timeStr.split(':');
         if (parts.length < 2) return timeStr;
         let hr = parseInt(parts[0], 10);
@@ -124,223 +120,214 @@ const MegaEventPage: React.FC<MegaEventPageProps> = ({ user }) => {
 
     const validItems = schedule.filter(item => item.event_date);
     const isMegaEventCompleted = validItems.length > 0 && validItems.every(item => {
-        const dateStr = item.event_date.split('T')[0];
+        const dateStr = item.event_date!.split('T')[0];
         const timeStr = item.event_time || '23:59:59';
         const itemDate = new Date(`${dateStr}T${timeStr}`);
         return itemDate.getTime() < Date.now();
     });
 
     return (
-        <div className="relative min-h-[calc(100vh-64px)] w-full overflow-y-auto" style={{ backgroundColor: '#0B0F19' }}>
-            {/* Background Glow */}
-            <div aria-hidden className="pointer-events-none absolute inset-0 fixed top-0 left-0" style={{
-                background: 'radial-gradient(ellipse 60% 70% at 50% 30%, rgba(139, 92, 246, 0.15) 0%, transparent 60%)',
-            }} />
+        <div className="relative min-h-[calc(100vh-64px)] w-full overflow-y-auto bg-[#07090F]">
+            {/* Atmospheric Festival Glow */}
+            <div
+                aria-hidden="true"
+                className="pointer-events-none fixed inset-0"
+                style={{
+                    background:
+                        'radial-gradient(ellipse 65% 55% at 50% 15%, rgba(244,63,94,0.14) 0%, transparent 60%), radial-gradient(ellipse 50% 50% at 80% 45%, rgba(139,92,246,0.14) 0%, transparent 65%)',
+                }}
+            />
 
-            <div className="relative z-10 mx-auto max-w-5xl px-6 py-16 flex flex-col items-center">
-
-                {/* Title Section */}
-                <div className="text-center space-y-4 mb-16 w-full flex flex-col items-center">
-                    <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold tracking-widest text-violet-300 uppercase"
-                        style={{ background: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
-                        <Sparkles size={14} className="text-violet-400" />
-                        Signature Event
+            <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 py-12 sm:py-16 flex flex-col items-center">
+                {/* Title Section (GPU animated, zero canvas overhead) */}
+                <motion.div
+                    initial={{ opacity: 0, y: 18 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="text-center space-y-4 mb-12 w-full flex flex-col items-center"
+                >
+                    <div className="inline-flex items-center gap-2 rounded-full border border-rose-400/25 bg-rose-500/10 px-4 py-1.5 text-xs font-bold tracking-widest text-rose-200 uppercase">
+                        <Sparkles size={14} className="text-amber-300" />
+                        3-Day Signature Festival
                     </div>
 
-                    <div className="w-full h-[120px] max-w-[800px] mt-2 mb-2">
-                        <ParticleTextEffect text="The Mega Fest" fontSize={80} color="#FFFFFF" glowColor="#8B5CF6" />
-                    </div>
+                    <h1 className="font-display text-5xl sm:text-7xl font-extrabold tracking-tight bg-gradient-to-r from-amber-300 via-rose-400 to-violet-400 bg-clip-text text-transparent">
+                        The Mega Fest
+                    </h1>
 
-                    <p className="max-w-xl mx-auto text-lg" style={{ color: '#94A3B8' }}>
-                        Three days of unforgettable experiences, music, and celebration. Secure your VIP All-Access pass now.
+                    <p className="max-w-xl mx-auto text-base sm:text-lg text-slate-300/80">
+                        Three nights of live stage performances, DJ sets, and celebration. Claim your All-Access VIP pass in one click.
                     </p>
-                </div>
+                </motion.div>
 
-                {/* Action Card */}
-                <div className="w-full max-w-md p-1 rounded-3xl mb-20"
-                    style={{ background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.5) 0%, rgba(59, 130, 246, 0.2) 100%)' }}>
-                    <div className="bg-[#0f1423] rounded-[22px] p-8 flex flex-col items-center text-center">
-
+                {/* VIP Pass Card */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.97 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.45, delay: 0.1 }}
+                    className="w-full max-w-md p-[1px] rounded-3xl mb-16"
+                    style={{ background: 'linear-gradient(135deg, rgba(251,113,133,0.6) 0%, rgba(251,191,36,0.35) 50%, rgba(139,92,246,0.5) 100%)' }}
+                >
+                    <div className="bg-[#0E1424] rounded-[23px] p-8 flex flex-col items-center text-center">
                         {loading ? (
-                            <div className="w-8 h-8 rounded-full border-2 border-violet-500 border-t-transparent animate-spin"></div>
+                            <div className="w-8 h-8 rounded-full border-2 border-rose-400 border-t-transparent animate-spin" />
                         ) : isMegaEventCompleted ? (
-                            <div className="flex flex-col items-center space-y-4 animate-in zoom-in duration-500">
-                                <div className="w-16 h-16 bg-gray-500/10 rounded-full flex items-center justify-center border border-gray-500/20">
-                                    <CheckCircle2 className="w-8 h-8 text-gray-400" />
+                            <div className="flex flex-col items-center space-y-4">
+                                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center border border-white/10">
+                                    <CheckCircle2 className="w-8 h-8 text-slate-400" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-white">Mega Fest Completed</h3>
-                                <p className="text-sm text-gray-400/80">Thank you for participating!</p>
-                                {hasTicket && (
-                                     <div className="mt-4 w-full rounded-xl border border-white/10 p-4 border-dashed relative overflow-hidden"
-                                     style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)', opacity: 0.5 }}>
-                                     <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[#0f1423] rounded-full border-r border-white/10 border-dashed"></div>
-                                     <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[#0f1423] rounded-full border-l border-white/10 border-dashed"></div>
-                                     <p className="text-xs uppercase tracking-[0.3em] text-white/40 mb-1">Admit One</p>
-                                     <p className="text-lg font-mono font-bold text-violet-300">{user.name}</p>
-                                     <p className="text-sm text-white/50 mt-1">3-Day Mega Event</p>
-                                 </div>
-                                )}
+                                <h3 className="font-display text-2xl font-bold text-white">Mega Fest Completed</h3>
+                                <p className="text-sm text-slate-400">Thanks for celebrating with us!</p>
                             </div>
                         ) : hasTicket ? (
-                            <div className="flex flex-col items-center space-y-4 animate-in zoom-in duration-500">
-                                <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20">
-                                    <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+                            <div className="flex flex-col items-center space-y-4 w-full">
+                                <div className="w-16 h-16 bg-emerald-500/15 rounded-full flex items-center justify-center border border-emerald-400/30">
+                                    <CheckCircle2 className="w-8 h-8 text-emerald-300" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-white">Pass Secured!</h3>
-                                <p className="text-sm text-emerald-400/80">You have an All-Access VIP Pass.</p>
+                                <h3 className="font-display text-2xl font-bold text-white">VIP Pass Secured</h3>
+                                <p className="text-sm text-emerald-300/90">You have All-Access entry for all 3 days.</p>
 
-                                {/* Ticket Visual */}
-                                <div className="mt-4 w-full rounded-xl border border-white/10 p-4 border-dashed relative overflow-hidden"
-                                    style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)' }}>
-                                    <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[#0f1423] rounded-full border-r border-white/10 border-dashed"></div>
-                                    <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[#0f1423] rounded-full border-l border-white/10 border-dashed"></div>
-                                    <p className="text-xs uppercase tracking-[0.3em] text-white/40 mb-1">Admit One</p>
-                                    <p className="text-lg font-mono font-bold text-violet-300">{user.name}</p>
-                                    <p className="text-sm text-white/50 mt-1">3-Day Mega Event</p>
+                                <div className="mt-4 w-full rounded-2xl border border-dashed border-white/15 p-5 relative overflow-hidden bg-white/[0.03]">
+                                    <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[#0E1424] rounded-full border-r border-white/15" />
+                                    <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[#0E1424] rounded-full border-l border-white/15" />
+                                    <p className="text-[10px] font-mono-num uppercase tracking-[0.3em] text-amber-300 mb-1">Admit One · VIP</p>
+                                    <p className="text-lg font-mono-num font-bold text-white">{user.name}</p>
+                                    <p className="text-xs text-slate-400 mt-1">3-Day Mega Fest Pass</p>
                                 </div>
                             </div>
                         ) : (
                             <div className="flex flex-col items-center space-y-6 w-full">
-                                <div className="w-16 h-16 bg-violet-500/10 rounded-full flex items-center justify-center border border-violet-500/20">
-                                    <Ticket className="w-8 h-8 text-violet-400" />
+                                <div className="w-16 h-16 bg-rose-500/15 rounded-full flex items-center justify-center border border-rose-400/30">
+                                    <Ticket className="w-8 h-8 text-rose-300" />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-bold text-white mb-1">All-Access Pass</h3>
-                                    <p className="text-sm text-white/50">Grants entry to all 3 days.</p>
+                                    <h3 className="font-display text-2xl font-bold text-white mb-1">All-Access Pass</h3>
+                                    <p className="text-sm text-slate-400">Grants entry to Cultural, DJ, and Star Night.</p>
                                 </div>
 
                                 <button
                                     onClick={handleCollectTicket}
                                     disabled={processing}
-                                    className="w-full flex items-center justify-center gap-2 rounded-xl px-6 py-4 font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:scale-100"
-                                    style={{
-                                        background: 'linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%)',
-                                        boxShadow: '0 10px 30px -10px rgba(139, 92, 246, 0.5)'
-                                    }}>
+                                    className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-rose-500 via-fuchsia-500 to-amber-500 px-6 py-4 font-bold text-white shadow-lg shadow-rose-500/25 transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 cursor-pointer"
+                                >
                                     {processing ? (
-                                        <div className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
+                                        <div className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                                     ) : (
-                                        <>Get Pass <Ticket size={18} /></>
+                                        <>Claim VIP Pass <Ticket size={18} /></>
                                     )}
                                 </button>
                             </div>
                         )}
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Schedule Grid */}
                 <div className="w-full max-w-4xl">
-                    <div className="flex items-center justify-center mb-8 border-b border-white/5 pb-4 relative">
-                        <h3 className="text-xl font-bold text-white text-center">Event Lineup</h3>
+                    <div className="flex items-center justify-center mb-8 border-b border-white/[0.07] pb-4">
+                        <h3 className="font-display text-2xl font-bold text-white text-center">3-Day Lineup</h3>
                     </div>
                     {loading ? (
-                        <div className="flex justify-center p-8"><div className="w-6 h-6 rounded-full border-2 border-white/20 border-t-white animate-spin"></div></div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {[0, 1, 2].map(n => <div key={n} className="h-52 rounded-3xl skeleton-shimmer border border-white/10" />)}
+                        </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {schedule.map((item) => (
-                                <button key={item.id}
-                                    onClick={() => user.isAdmin ? handleEditClick(item) : undefined}
+                            {schedule.map((item, idx) => (
+                                <motion.button
+                                    key={item.id}
+                                    initial={{ opacity: 0, y: 16 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: idx * 0.08 }}
+                                    onClick={() => (user.isAdmin ? handleEditClick(item) : undefined)}
                                     disabled={!user.isAdmin}
-                                    className={`group relative rounded-2xl p-6 transition-all text-left w-full h-full block ${user.isAdmin ? 'cursor-pointer hover:-translate-y-1 ring-0 hover:ring-2 hover:ring-violet-500/50 outline-none' : 'cursor-default'}`}
-                                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                    className={`group relative rounded-3xl p-6 transition-transform duration-300 text-left w-full h-full block border border-white/10 bg-[#0E1424]/90 ${
+                                        user.isAdmin ? 'cursor-pointer hover:-translate-y-1 hover:border-amber-400/40' : 'cursor-default'
+                                    }`}
+                                >
                                     {user.isAdmin && (
-                                        <div className="absolute top-4 right-4 text-white/20 group-hover:text-violet-400 transition-colors">
+                                        <div className="absolute top-4 right-4 text-white/25 group-hover:text-amber-300 transition-colors">
                                             <Edit3 size={16} />
                                         </div>
                                     )}
-                                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none"></div>
                                     <div className="relative z-10 flex flex-col items-center text-center space-y-3">
-                                        <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-2"
-                                            style={{ background: 'rgba(255,255,255,0.05)' }}>
+                                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white/[0.06] border border-white/10 mb-1">
                                             {getIconFromName(item.icon_name, `w-6 h-6 ${colorForIcon(item.icon_name)}`)}
                                         </div>
-                                        <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8]">{item.day_label}</p>
-                                        <h4 className="text-lg font-bold text-white">{item.title}</h4>
+                                        <p className="text-xs font-mono-num font-bold uppercase tracking-widest text-amber-300">
+                                            {item.day_label}
+                                        </p>
+                                        <h4 className="font-display text-xl font-bold text-white">{item.title}</h4>
 
                                         {(item.event_date || item.event_time) && (
-                                            <div className="text-xs font-semibold text-violet-300/80 bg-violet-500/10 px-3 py-1 rounded-md">
-                                                {formatDate(item.event_date)} {item.event_time && `• ${formatTime(item.event_time)}`}
+                                            <div className="text-xs font-mono-num font-semibold text-cyan-200 bg-cyan-500/10 border border-cyan-400/20 px-3 py-1 rounded-full">
+                                                {formatDate(item.event_date)} {item.event_time && `· ${formatTime(item.event_time)}`}
                                             </div>
                                         )}
 
-                                        <p className="text-sm text-white/50 leading-relaxed mt-2">{item.description}</p>
+                                        <p className="text-sm text-slate-400 leading-relaxed mt-1">{item.description}</p>
                                     </div>
-                                </button>
+                                </motion.button>
                             ))}
                         </div>
                     )}
                 </div>
-
             </div>
 
-            {/* Editing Modal for Admin */}
+            {/* Admin Edit Modal */}
             {editingItem && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 backdrop-blur-md"
-                    style={{ backgroundColor: 'rgba(2, 8, 23, 0.8)' }}>
-                    <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0f1423] p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 backdrop-blur-md bg-black/75">
+                    <div className="w-full max-w-md rounded-3xl border border-white/15 bg-[#0E1424] p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-bold text-white">Edit Schedule Item</h3>
-                            <button onClick={() => setEditingItem(null)} className="text-white/40 hover:text-white">
+                            <h3 className="font-display text-xl font-bold text-white">Edit Schedule Item</h3>
+                            <button onClick={() => setEditingItem(null)} className="text-slate-400 hover:text-white cursor-pointer">
                                 <X size={20} />
                             </button>
                         </div>
 
                         <div className="space-y-4">
                             <div>
-                                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/50">Day Label / Subtitle</label>
+                                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-400">Day Label</label>
                                 <input type="text" name="day_label" value={editForm.day_label || ''} onChange={handleFormChange}
-                                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 outline-none transition-all focus:border-violet-500/50 focus:bg-white/10" />
+                                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-amber-400/50" />
                             </div>
-
                             <div>
-                                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/50">Title</label>
+                                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-400">Title</label>
                                 <input type="text" name="title" value={editForm.title || ''} onChange={handleFormChange}
-                                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 outline-none transition-all focus:border-violet-500/50 focus:bg-white/10" />
+                                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-amber-400/50" />
                             </div>
-
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/50">Date</label>
-                                    <DatePicker
-                                        value={editForm.event_date || ''}
-                                        onChange={(date) => setEditForm(prev => ({ ...prev, event_date: date }))}
-                                        className="[&>button]:border-white/10 [&>button]:bg-white/5 [&>button]:text-white hover:[&>button]:border-white/20 hover:[&>button]:bg-white/10 focus:[&>button]:border-violet-500/50 focus:[&>button]:ring-4 focus:[&>button]:ring-violet-500/10"
-                                    />
+                                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-400">Date</label>
+                                    <DatePicker value={editForm.event_date || ''} onChange={(date) => setEditForm(prev => ({ ...prev, event_date: date }))} />
                                 </div>
                                 <div>
-                                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/50">Time</label>
-                                    <TimePicker
-                                        value={editForm.event_time || ''}
-                                        onChange={(time) => setEditForm(prev => ({ ...prev, event_time: time }))}
-                                        className="[&>button]:border-white/10 [&>button]:bg-white/5 [&>button]:text-white hover:[&>button]:border-white/20 hover:[&>button]:bg-white/10 focus:[&>button]:border-violet-500/50 focus:[&>button]:ring-4 focus:[&>button]:ring-violet-500/10"
-                                    />
+                                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-400">Time</label>
+                                    <TimePicker value={editForm.event_time || ''} onChange={(time) => setEditForm(prev => ({ ...prev, event_time: time }))} />
                                 </div>
                             </div>
-
                             <div>
-                                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/50">Icon</label>
+                                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-400">Icon</label>
                                 <select name="icon_name" value={editForm.icon_name || 'Calendar'} onChange={handleFormChange}
-                                    className="w-full rounded-xl border border-white/10 bg-[#1e2436] px-4 py-3 text-sm text-white outline-none transition-all focus:border-violet-500/50">
+                                    className="w-full rounded-xl border border-white/10 bg-[#151D33] px-4 py-3 text-sm text-white outline-none focus:border-amber-400/50">
                                     <option value="Calendar">Calendar</option>
                                     <option value="Music">Music</option>
                                     <option value="Star">Star / Celebrity</option>
                                 </select>
                             </div>
-
                             <div>
-                                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/50">Description</label>
+                                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-400">Description</label>
                                 <textarea name="description" value={editForm.description || ''} onChange={handleFormChange} rows={3}
-                                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/20 outline-none transition-all focus:border-violet-500/50 focus:bg-white/10 resize-none" />
+                                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-amber-400/50 resize-none" />
                             </div>
                         </div>
 
                         <div className="mt-8 flex gap-3">
                             <button onClick={() => setEditingItem(null)}
-                                className="w-1/3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/70 transition-all hover:bg-white/10 hover:text-white">
+                                className="w-1/3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-300 hover:bg-white/10 cursor-pointer">
                                 Cancel
                             </button>
                             <button onClick={handleSaveEdit}
-                                className="w-2/3 rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold text-white shadow-lg transition-all hover:bg-violet-500 active:scale-[0.98]">
+                                className="w-2/3 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 px-4 py-3 text-sm font-bold text-white hover:opacity-95 cursor-pointer">
                                 Save Changes
                             </button>
                         </div>
