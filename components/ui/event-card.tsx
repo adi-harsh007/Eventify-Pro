@@ -74,7 +74,7 @@ const EventCard = React.forwardRef<HTMLDivElement, EventCardProps>(
                     {...props}
                 >
                     {/* Top Visual Poster Header */}
-                    <div className="relative h-40 shrink-0 overflow-hidden" style={{ background: theme.gradient }}>
+                    <div className="relative h-32 shrink-0 overflow-hidden" style={{ background: theme.gradient }}>
                         {hasCustomImage ? (
                             <img
                                 src={imageUrl}
@@ -130,14 +130,14 @@ const EventCard = React.forwardRef<HTMLDivElement, EventCardProps>(
                     </div>
 
                     {/* Body */}
-                    <div className="flex flex-1 flex-col justify-between p-5 pt-2">
+                    <div className="flex flex-1 flex-col justify-between p-5 pt-3">
                         <div className="space-y-2">
                             <h3 className="font-display text-lg font-bold tracking-tight text-white line-clamp-1 group-hover:text-amber-200 transition-colors">
                                 {title}
                             </h3>
-                            <p className="inline-flex items-center gap-1.5 text-xs text-slate-400 line-clamp-1">
+                            <p className="flex items-center gap-1.5 text-xs text-slate-400">
                                 <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-500" />
-                                {location}
+                                <span className="truncate">{location}</span>
                             </p>
                             <p className="text-xs sm:text-sm text-slate-300/75 leading-relaxed line-clamp-2">
                                 {description}
@@ -145,7 +145,7 @@ const EventCard = React.forwardRef<HTMLDivElement, EventCardProps>(
                         </div>
 
                         {/* Perforated Stub Footer */}
-                        <div className="mt-4 space-y-3">
+                        <div className="mt-4 space-y-3 pb-0.5">
                             {showCapacityBar && !isPastEvent && (
                                 <div className="space-y-1">
                                     <div className="flex items-center justify-between text-[11px] font-mono-num text-slate-400">
@@ -171,7 +171,7 @@ const EventCard = React.forwardRef<HTMLDivElement, EventCardProps>(
                             </div>
 
                             <div className="flex items-center justify-between gap-3">
-                                <span className="text-xs font-mono-num text-slate-300 line-clamp-1">
+                                <span className="text-xs font-mono-num text-slate-300 truncate">
                                     {date}
                                 </span>
 

@@ -582,7 +582,7 @@ const DeptRow: React.FC<{
 
       <div
         ref={rowRef}
-        className="flex gap-5 overflow-x-auto pb-4"
+        className="flex items-stretch gap-5 overflow-x-auto pb-4"
         style={{ scrollbarWidth: 'none', scrollSnapType: 'x mandatory' }}
       >
         {events.map(event => {
@@ -590,7 +590,7 @@ const DeptRow: React.FC<{
           const isFull = event.registered_count >= event.capacity;
           const isPast = isPastEvent(event);
           return (
-            <div key={event.id} className="shrink-0" style={{ width: 'min(336px, 85vw)', scrollSnapAlign: 'start' }}>
+            <div key={event.id} className="shrink-0 flex" style={{ width: 'min(336px, 85vw)', scrollSnapAlign: 'start' }}>
               <EventCard
                 imageUrl={event.image_url || ''}
                 category={event.category}
@@ -608,7 +608,7 @@ const DeptRow: React.FC<{
                 maxTeamSize={event.max_team_size}
                 onToggleRegistration={(teamName) => (isJoined ? onLeaveEvent(event.id) : onJoinEvent(event.id, teamName))}
                 onClick={() => onEventClick(event)}
-                className="h-[395px]"
+                className="h-full min-h-[395px]"
               />
             </div>
           );
@@ -654,7 +654,7 @@ const EventGrid: React.FC<{
           maxTeamSize={event.max_team_size}
           onToggleRegistration={(teamName) => (isJoined ? onLeaveEvent(event.id) : onJoinEvent(event.id, teamName))}
           onClick={() => onEventClick(event)}
-          className="h-[395px]"
+          className="h-full min-h-[395px]"
         />
       );
     })}
